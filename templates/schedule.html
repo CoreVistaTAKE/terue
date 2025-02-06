@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スケジュール登録 - VisOneSystem</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- アイコン・マニフェスト -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-left">
+      <a href="/" class="home-link">
+        <img src="{{ url_for('static', filename='icons/home-icon.svg') }}" alt="ホーム" class="header-icon">
+      </a>
+    </div>
+    <div class="header-center">
+      <h1>スケジュール登録</h1>
+      <p class="subtitle">VisOneSystem v1.0</p>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="schedule-main">
+    <h2>研修・訓練等 予定登録</h2>
+    <form action="{{ url_for('save_schedule') }}" method="POST">
+      <label>種類 <b>(減算対象は太字)</b>:
+        <select name="title" id="title-select" required>
+          <option value="">-- 選択してください --</option>
+          {% for key, val in training_details.items() %}
+            {% if val.deductionRisk == "該当" %}
+              <option value="{{ key }}" style="font-weight:bold;">{{ key }}</option>
+            {% else %}
+              <option value="{{ key }}">{{ key }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </label>
+
+      <div id="auto-details" class="auto-details">
+        ※種類を選択すると内容がここに表示されます
+      </div>
+
+      <!-- hiddenフィールド -->
+      <input type="hidden" name="event_type" id="type-hidden">
+      <input type="hidden" name="detail" id="detail-hidden">
+
+      <label>予定日:
+        <input type="date" name="date" required>
+      </label>
+      <br><br>
+
+      <label>追記事項:
+        <textarea name="content" rows="4" cols="40"></textarea>
+      </label>
+      <br><br>
+
+      <button type="submit">保存</button>
+    </form>
+  </main>
+
+  <!-- フッター -->
+  <footer class="footer">
+    <p>VisOneSystem™ &amp; VisOneAI™ は CoreVista-Japan の商標です。© 2025 CoreVista-Japan. All Rights Reserved.</p>
+  </footer>
+
+  <!-- training_details をJSへ展開 -->
+  <script>
+    let detailsDataStr = `{{ training_details|tojson|safe }}`;
+    detailsDataStr = detailsDataStr.replace(/[\u0000-\u001F]/g, '');
+    const detailsData = JSON.parse(detailsDataStr);
+  </script>
+  <script src="{{ url_for('static', filename='schedule.js') }}"></script>
+</body>
+</html>

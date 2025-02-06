@@ -1,0 +1,244 @@
+/*********************
+  リセット・基本設定
+*********************/
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f8fb;
+  color: #333;
+  padding-top: 80px;
+}
+/*********************
+  ヘッダー
+*********************/
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #e0efff;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  z-index: 1000;
+}
+.header-left { margin-right: 10px; }
+.header-icon { height: 50px; width: auto; }
+.header-center h1 { font-size: 1.5rem; color: #004080; }
+.subtitle { font-size: 0.9rem; color: #004080; }
+/*********************
+  フッター
+*********************/
+.footer {
+  background: #e0efff;
+  text-align: center;
+  padding: 10px;
+  font-size: 0.8rem;
+  margin-top: 20px;
+}
+/*********************
+  コンテナレイアウト
+*********************/
+.container {
+  display: flex;
+  margin-top: 10px;
+  min-height: calc(100vh - 140px);
+}
+/*********************
+  左メニュー
+*********************/
+.sidebar {
+  width: 250px;
+  background: #fff;
+  border-right: 1px solid #ccc;
+  padding: 20px;
+}
+#left-menu ul { list-style: none; padding-left: 0; }
+#left-menu li {
+  padding: 6px;
+  margin-bottom: 6px;
+  background: #f4f8fb;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-size: 0.8rem;
+}
+#left-menu li:hover { background: #d0e7ff; }
+/* 大項目：文字サイズ1.1倍 */
+#left-menu li[data-cat] > .menu-title {
+  font-size: 1.1rem;
+}
+/* 最終項目選択時：太字かつ1.2倍 */
+#left-menu li.selected[data-item] {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+/* 階層のインデント */
+#left-menu ul ul { margin-left: 15px; padding-left: 10px; border-left: 2px solid #ccc; }
+/* 初期状態で隠す */
+.hidden { display: none; }
+/*********************
+  選択項目表示エリア（右上部） 
+*********************/
+.selected-item {
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+/*********************
+  メインコンテンツ
+*********************/
+.main-content {
+  flex: 1;
+  padding: 20px;
+}
+/*********************
+  カレンダーセクション
+*********************/
+.calendar-section {
+  margin-bottom: 20px;
+}
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  background: #fff;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+}
+.nav-button {
+  background: #ddd;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.nav-button:hover { background: #ccc; }
+.calendar-title { font-size: 1.2rem; font-weight: bold; }
+/* カレンダー本体 */
+#calendar-body { border: 1px solid #ccc; overflow: hidden; }
+.big-calendar {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.big-calendar th,
+.big-calendar td {
+  border: 1px solid #ccc;
+  text-align: left;
+  vertical-align: top;
+  padding: 2px;
+  font-size: 0.7rem;
+  position: relative;
+  height: 80px;
+  overflow: hidden;
+}
+.calendar-date {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+/* イベントアイテム */
+.event-item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.65rem;
+  margin: 1px 0;
+}
+.event-circle {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 2px;
+}
+.circle-completed { background: green; }
+.circle-pending { background: yellow; }
+.circle-warning { background: red; }
+.circle-overdue { background: red; animation: blink 1s infinite alternate; }
+@keyframes blink { from { background: red; } to { background: pink; } }
+/*********************
+  今月の業務一覧
+*********************/
+.monthly-schedule {
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.monthly-schedule .col {
+  width: 50%;
+  float: left;
+}
+.monthly-schedule .row {
+  padding: 4px;
+  font-size: 0.7rem;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.monthly-schedule:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+/*********************
+  詳細表示セクション
+*********************/
+.detail-section {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 15px;
+  background: #fff;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+/*********************
+  モーダル
+*********************/
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+.modal-close {
+  float: right;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+/*********************
+  レスポンシブ対応
+*********************/
+@media (max-width: 768px) {
+  .container { flex-direction: column; }
+  .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ccc; }
+  .big-calendar { font-size: 0.6rem; }
+}

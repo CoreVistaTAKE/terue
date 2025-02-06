@@ -1,0 +1,53 @@
+/* Roboto (400): Regular */
+@font-face {
+  font-display: swap;
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/static/fonts/roboto-v32-latin-regular.woff2') format('woff2');
+}
+
+/* Roboto (500): Medium */
+@font-face {
+  font-display: swap;
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  src: url('/static/fonts/roboto-v32-latin-500.woff2') format('woff2');
+}
+
+/* Merriweather (400): Regular */
+@font-face {
+  font-display: swap;
+  font-family: 'Merriweather';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/static/fonts/merriweather-v30-latin-regular.woff2') format('woff2');
+}
+
+/* Merriweather (700): Bold */
+@font-face {
+  font-display: swap;
+  font-family: 'Merriweather';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/static/fonts/merriweather-v30-latin-700.woff2') format('woff2');
+}
+
+/* Inter (400): Regular */
+@font-face {
+  font-display: swap;
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/static/fonts/inter-v18-latin-regular.woff2') format('woff2');
+}
+
+/* Inter (600): Semi-bold */
+@font-face {
+  font-display: swap;
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  src: url('/static/fonts/inter-v18-latin-600.woff2') format('woff2');
+}

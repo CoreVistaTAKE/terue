@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>VisOneSystem - 障がい福祉版 総合管理システム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-left">
+      <a href="/" class="home-link">
+        <img src="{{ url_for('static', filename='icons/home-icon.svg') }}" alt="ホーム" class="header-icon">
+      </a>
+    </div>
+    <div class="header-center">
+      <h1>障がい福祉版 総合管理システム</h1>
+      <p class="subtitle">VisOneSystem v1.0</p>
+    </div>
+  </header>
+
+  <!-- メインコンテナ：左メニュー＋右コンテンツ -->
+  <div class="container">
+    <!-- 左サイドバー：階層メニュー（JSで生成） -->
+    <aside class="sidebar">
+      <div id="left-menu"><!-- メニューHTMLはJSで生成 --></div>
+    </aside>
+
+    <!-- 右メインエリア -->
+    <main class="main-content">
+      <!-- 選択された項目詳細表示（必ずカレンダーの上） -->
+      <section class="detail-section" id="detail-section">
+        <h2>詳細表示エリア</h2>
+        <p>ここにメニューから選んだ項目の詳細が表示されます。</p>
+      </section>
+      
+      <!-- カレンダー＆今月の業務一覧 -->
+      <section class="calendar-section">
+        <div id="calendar-header" class="calendar-header">
+          <button id="prev-month" class="nav-button">&lt; 先月</button>
+          <span id="main-calendar-title" class="calendar-title">--月 - MonthName -</span>
+          <button id="next-month" class="nav-button">翌月 &gt;</button>
+        </div>
+        <div id="calendar-body">
+          <table id="big-calendar" class="big-calendar"></table>
+        </div>
+        <!-- 今月の業務一覧 -->
+        <div id="monthly-schedule" class="monthly-schedule"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- フッター -->
+  <footer class="footer">
+    <p>VisOneSystem™ &amp; VisOneAI™ は CoreVista-Japan の商標です。© 2025 CoreVista-Japan. All Rights Reserved.</p>
+  </footer>
+
+  <!-- モーダル：日別イベント一覧（題名＋詳細ボタン） -->
+  <div id="day-modal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeDayModal()">×</span>
+      <h2 id="day-modal-title">日別イベント一覧</h2>
+      <div id="day-modal-list"></div>
+    </div>
+  </div>
+
+  <!-- モーダル：今月の業務一覧全件表示（モーダル内に詳細ボタンを配置） -->
+  <div id="monthly-modal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeMonthlyModal()">×</span>
+      <h2>今月の業務一覧</h2>
+      <div id="monthly-list"></div>
+    </div>
+  </div>
+
+  <!-- イベント情報（JSON） -->
+  <script id="event-data" type="application/json">
+    {{ events|tojson|safe }}
+  </script>
+  <!-- メニュー定義（項目はそのまま保持） -->
+  <script>
+    let menuData = {
+      "0": {
+        "title": "施設情報、利用者情報",
+        "description": "施設と利用者の情報を他の項目でも参照できるように登録します。",
+        "sub": {
+          "随時／都度": {
+            "items": {
+              "施設情報": "施設の基本情報、ハウスルールなどの登録",
+              "利用者情報一覧": "利用者の基本情報・受給者証情報・個別の注意点等の登録"
+            }
+          }
+        }
+      },
+      "1": {
+        "title": "サービス提供・支援記録",
+        "description": "利用者ごと・日々のサービス提供の流れや支援計画、会議の記録など、現場でのサービス実施に関する記録です。",
+        "sub": {
+          "日々": {
+            "items": {
+              "業務日誌": "事業所内の1日の動きを記録",
+              "サービス提供記録": "利用者ごとの日々の活動・体調記録など",
+              "サービス提供実績記録票": "サービス提供の都度記録"
+            }
+          },
+          "都度": {
+            "items": {
+              "アセスメント・個別支援計画書・モニタリングの記録": "利用開始時・プラン見直し時に作成"
+            }
+          },
+          "定期": {
+            "items": {
+              "サービス担当者会議の記録": "定期的に開催される会議の議事録など"
+            }
+          }
+        }
+      },
+      "2": {
+        "title": "人事・労務関連書類",
+        "description": "従業者の採用・配置、勤務状況、健康・研修など、職員に関する基本情報や日々の労務管理を示す書類です。",
+        "sub": {
+          "日々": {
+            "items": {
+              "職員の勤務状況": "タイムカード・出勤簿など"
+            }
+          },
+          "月次": {
+            "items": {
+              "勤務予定実績表": "「予定」と「実績」を毎月作成し、配置基準を確認",
+              "従業者の給与の支払い書類": "賃金台帳・給与明細、労働保険・社会保険関係書類",
+              "平均利用者数調書": "毎月の利用者数の記録に基づく算定用シート"
+            }
+          },
+          "年次": {
+            "items": {
+              "健康診断結果": "健康診断結果の写し：雇用時および年1回の受診記録"
+            }
+          },
+          "随時／都度": {
+            "items": {
+              "雇用状況書類": "雇用契約書・労働条件通知書・就業規則など",
+              "資格証": "",
+              "守秘義務書類": "誓約書、就業規則、雇用契約書など"
+            }
+          },
+          "定期": {
+            "items": {
+              "研修記録": "人権研修、内部研修、外部研修など、年1回以上および新規採用時の研修記録"
+            }
+          }
+        }
+      },
+      "3": {
+        "title": "運営・基本管理書類",
+        "description": "運営全体のルールや各種マニュアル、定めた規程、外部との契約・連携など、事業所運営の根幹となる書類群です。",
+        "sub": {
+          "随時／都度": {
+            "items": {
+              "運営規程": "最新の規程を常に保管。変更時は届出が必要",
+              "対応マニュアル": "苦情・事故・緊急時・感染症など",
+              "預り金管理規程": "",
+              "パンフレット": "",
+              "申請書・変更届出書": "",
+              "集団資料": "",
+              "医療機関契約書": ""
+            }
+          },
+          "年次": {
+            "items": {
+              "非常災害対策書類": "避難訓練実施記録、消防計画・水害時の避難確保計画など"
+            }
+          },
+          "定期": {
+            "items": {
+              "委員会活動記録": "虐待防止委員会、感染対策委員会、BCP策定・見直しなど"
+            }
+          }
+        }
+      },
+      "4": {
+        "title": "契約・利用者関連・請求書類",
+        "description": "利用者との契約・重要事項説明、受給者証、契約報告、介護給付費明細、各種加算、請求・領収に関する書類群です。",
+        "sub": {
+          "都度": {
+            "items": {
+              "重要事項説明書・契約書・同意書": "利用契約時に交付・説明",
+              "受給者証の写し": "利用開始時のコピー",
+              "契約内容報告書": "契約締結・終了時の控え",
+              "法定代理受領通知": "サービス利用料支払い時に交付",
+              "請求書・領収証": "利用者への請求・領収時の控え"
+            }
+          },
+          "月次": {
+            "items": {
+              "介護給付費明細書": "国保連請求分の明細書",
+              "加算根拠資料": "各種加算の算定根拠資料"
+            }
+          }
+        }
+      },
+      "5": {
+        "title": "財務・保険関連",
+        "description": "会計処理、損益計算、事業者賠償責任保険など、経営の財務面やリスク管理に関する書類です。",
+        "sub": {
+          "月次": {
+            "items": {
+              "会計書類": "BS、PLなど（事業ごとに区分し月次で作成・保管）"
+            }
+          },
+          "随時／都度": {
+            "items": {
+              "保険証券": "事業者賠償責任保険証券（更新時・契約時）"
+            }
+          }
+        }
+      }
+    };
+
+    // 選択状態保持用（最下層のみ選択状態にする）
+    window.activeLarge = null;
+    window.activeSub = null;
+    window.activeItem = null;
+  </script>
+  <!-- イベント情報パース -->
+  <script>
+    let eventData = JSON.parse(document.getElementById('event-data').textContent);
+  </script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
