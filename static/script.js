@@ -5,13 +5,15 @@ function buildMenuHTML(menuData) {
   let html = '<ul>';
   for (let cat in menuData) {
     let catData = menuData[cat];
-    // 大項目（data-cat）：大項目は常に表示（初期状態は子リストを隠す）
+    // 大分類：表示はタイトルのみ（"大分類"は不要）
     html += `<li data-cat="${cat}"><span class="menu-title">${catData.title}</span>`;
     if (catData.sub) {
+      // 中分類は初期状態で隠す
       html += '<ul class="sub-menu hidden">';
       for (let sub in catData.sub) {
         html += `<li data-sub="${sub}"><span class="sub-title">${sub}</span>`;
         if (catData.sub[sub].items) {
+          // 項目一覧も初期状態で隠す
           html += '<ul class="item-menu hidden">';
           for (let item in catData.sub[sub].items) {
             html += `<li data-item="${item}">${item}</li>`;
@@ -35,9 +37,10 @@ document.addEventListener("DOMContentLoaded", function() {
   // クリックイベントの委任
   leftMenuEl.addEventListener("click", function(e) {
     let target = e.target;
-    if (target.tagName === "SPAN") target = target.parentElement;
-
-    // 大分類の場合：クリックした大項目の子リストをトグルし、他の大項目は閉じる
+    if (target.tagName === "SPAN") {
+      target = target.parentElement;
+    }
+    // 大分類の場合：閉じる他の大分類の展開
     if (target.hasAttribute("data-cat")) {
       leftMenuEl.querySelectorAll("li[data-cat]").forEach(li => {
         if (li !== target) {
@@ -46,24 +49,23 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       });
     }
-    // トグル表示（子リストがあれば）
+    // トグル表示：子リストがあれば（sub-menuまたはitem-menu）
     let childUL = target.querySelector("ul");
     if (childUL) {
       childUL.classList.toggle("hidden");
     }
-    
-    // すべての li から選択状態解除
+    // すべての li の選択状態解除
     leftMenuEl.querySelectorAll("li").forEach(li => li.classList.remove("selected"));
     
-    // 最終的にクリックされたアイテム（data-item がある場合）のみ選択状態にする
+    // 最終項目（data-item）がクリックされた場合のみ選択状態にする
     if (target.hasAttribute("data-item")) {
       target.classList.add("selected");
-      // 取得：大分類キー、subキー、itemキー
+      // 取得：大分類、sub、中分類、項目
       const catKey = target.closest("li[data-cat]").getAttribute("data-cat");
       const subKey = target.closest("li[data-sub]").getAttribute("data-sub");
       const itemKey = target.getAttribute("data-item");
       let detailText = menuData[catKey].sub[subKey].items[itemKey];
-      // 選択項目表示エリア（カレンダー上部）に更新
+      // 選択項目の詳細は detail-section に表示
       document.getElementById("detail-section").innerHTML =
         `<h2>${itemKey}</h2><p>${detailText}</p>`;
     }
@@ -160,7 +162,6 @@ function renderMonthlySchedule(year, month) {
   const monthStr = `${year}-${mm}`;
   let monthlyEvents = eventData.filter(ev => ev.dueDate.startsWith(monthStr));
   monthlyEvents.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-  
   let leftCol = monthlyEvents.slice(0, 5);
   let rightCol = monthlyEvents.slice(5, 10);
   if (monthlyEvents.length >= 11) {
@@ -168,25 +169,24 @@ function renderMonthlySchedule(year, month) {
     rightCol = monthlyEvents.slice(5, 9);
     rightCol.push({ summary: `他${others}件` });
   }
-  
   let html = '<div class="col" id="left-col">';
   leftCol.forEach(ev => {
-    // 各行に〇マークとタイトルを表示
-    let circle = ev ? `<span class="event-circle ${getEventCircleClass(ev)}"></span>` : "";
-    html += `<div class="row" onclick="openMonthlyEventModal('${ev.event_id}')">${circle}${ev.dueDate} - ${ev.title}</div>`;
+    let circle = `<span class="event-circle ${getEventCircleClass(ev)}"></span>`;
+    html += `<div class="row" onclick="openMonthlyModal('${ev.dueDate}')">${circle}${ev.dueDate} - ${ev.title}</div>`;
   });
   html += '</div><div class="col" id="right-col">';
   rightCol.forEach(ev => {
     if (ev.summary) {
       html += `<div class="row" onclick="openMonthlyModal()">${ev.summary}</div>`;
     } else {
-      let circle = ev ? `<span class="event-circle ${getEventCircleClass(ev)}"></span>` : "";
-      html += `<div class="row" onclick="openMonthlyEventModal('${ev.event_id}')">${circle}${ev.dueDate} - ${ev.title}</div>`;
+      let circle = `<span class="event-circle ${getEventCircleClass(ev)}"></span>`;
+      html += `<div class="row" onclick="openMonthlyModal('${ev.dueDate}')">${circle}${ev.dueDate} - ${ev.title}</div>`;
     }
   });
   html += '</div>';
   monthlyEl.innerHTML = html;
 }
+
 /***********************************************************
  * モーダル関連
  ***********************************************************/
@@ -212,7 +212,7 @@ function openDayModal(dateStr) {
 function closeDayModal() {
   document.getElementById("day-modal").style.display = "none";
 }
-function openMonthlyModal() {
+function openMonthlyModal(dateStr) {
   const modal = document.getElementById("monthly-modal");
   const listEl = document.getElementById("monthly-list");
   const today = new Date();
@@ -222,7 +222,6 @@ function openMonthlyModal() {
   const monthStr = `${year}-${mm}`;
   let monthlyEvents = eventData.filter(ev => ev.dueDate.startsWith(monthStr));
   monthlyEvents.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-  
   let html = "";
   monthlyEvents.forEach(ev => {
     html += `<div class="modal-row">
@@ -236,26 +235,10 @@ function openMonthlyModal() {
 function closeMonthlyModal() {
   document.getElementById("monthly-modal").style.display = "none";
 }
-/* モーダル：月次一覧から個別イベントのモーダルを開く */
-function openMonthlyEventModal(eventId) {
-  // 該当するイベントを探す
-  let ev = eventData.find(ev => ev.event_id == eventId);
-  if (!ev) return;
-  // ここでは月次モーダルと同じ day-modal を流用して、個別イベントの詳細を表示する例
-  let modalList = document.getElementById("day-modal-list");
-  let modalTitle = document.getElementById("day-modal-title");
-  modalTitle.textContent = `${ev.dueDate} のイベント`;
-  let html = `<div class="modal-row">
-                <span class="modal-title">${ev.title}</span>
-                <button class="detail-btn" onclick="event.stopPropagation();openDetailModal('${ev.event_id}')">詳細</button>
-              </div>`;
-  modalList.innerHTML = html;
-  document.getElementById("day-modal").style.display = "block";
-}
-/* 詳細モーダル：詳細ボタンを押した場合の処理（サンプル） */
 function openDetailModal(eventId) {
   alert("イベント詳細へ遷移: " + eventId);
 }
+
 /***********************************************************
  * 前月・翌月ボタン処理＆初期描画
  ***********************************************************/

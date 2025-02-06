@@ -11,6 +11,7 @@ body {
   background: #f4f8fb;
   color: #333;
   padding-top: 80px;
+  font-size: 0.8rem; /* 全体的に小さめ */
 }
 /*********************
   ヘッダー
@@ -46,7 +47,7 @@ body {
 *********************/
 .container {
   display: flex;
-  margin-top: 10px;
+  margin-top: 80px;
   min-height: calc(100vh - 140px);
 }
 /*********************
@@ -70,21 +71,22 @@ body {
   font-size: 0.8rem;
 }
 #left-menu li:hover { background: #d0e7ff; }
-/* 大項目：文字サイズ1.1倍 */
+/* 大分類：表示するのはタイトルのみ、文字を1.1倍 */
 #left-menu li[data-cat] > .menu-title {
   font-size: 1.1rem;
 }
-/* 最終項目選択時：太字かつ1.2倍 */
+/* 最終項目（data-item）のみ、選択状態で太字かつ1.2倍 */
 #left-menu li.selected[data-item] {
   font-weight: bold;
   font-size: 1.2rem;
 }
-/* 階層のインデント */
-#left-menu ul ul { margin-left: 15px; padding-left: 10px; border-left: 2px solid #ccc; }
-/* 初期状態で隠す */
+/* ネスト（中分類、項目一覧）のインデント */
+/* ※大分類の枠の中に中分類、項目一覧が存在するイメージとするため、内部には枠線は不要 */
+#left-menu ul ul { margin-left: 15px; padding-left: 10px; border-left: none; }
+/* 初期状態ではすべて隠す */
 .hidden { display: none; }
 /*********************
-  選択項目表示エリア（右上部） 
+  選択項目表示エリア（右上部）
 *********************/
 .selected-item {
   padding: 10px;
