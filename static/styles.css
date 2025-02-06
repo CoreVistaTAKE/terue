@@ -47,7 +47,7 @@ body {
 *********************/
 .container {
   display: flex;
-  margin-top: 80px;
+  margin-top: 10px;
   min-height: calc(100vh - 140px);
 }
 /*********************
