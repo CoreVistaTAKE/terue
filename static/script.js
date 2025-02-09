@@ -1,20 +1,168 @@
-/*********************
+/*************************************************
   グローバル変数
-*********************/
-let globalEvents = [];
-let globalTrainingData = {};
+*************************************************/
+let globalEvents = [];        // 全イベント（DBのeventsテーブル）
+let globalTrainingData = {};  // 研修データ（training_details.json→training_masterの連動）
 
-/*********************
-  メニュー生成用データ
-  (省略：略)
-*********************/
+/*************************************************
+  メニュー表示用データ（フル定義）
+*************************************************/
 const menuData = {
-  /* 省略 - 以前と同様 */
+  "0": {
+    "title": "施設情報、利用者情報",
+    "sub": {
+      "随時／都度": {
+        "title": "随時／都度",
+        "items": {
+          "施設情報": "施設の基本情報、ハウスルールなど",
+          "利用者情報一覧": "利用者の基本情報・受給者証情報等"
+        }
+      }
+    }
+  },
+  "1": {
+    "title": "サービス提供・支援記録",
+    "sub": {
+      "日々": {
+        "title": "日々",
+        "items": {
+          "業務日誌": "日報",
+          "サービス提供記録": "利用者の日々の支援内容等",
+          "サービス提供実績記録票": "都度記録"
+        }
+      },
+      "都度": {
+        "title": "都度",
+        "items": {
+          "アセスメント・個別支援計画書・モニタリングの記録": "利用開始や見直し時"
+        }
+      },
+      "定期": {
+        "title": "定期",
+        "items": {
+          "サービス担当者会議の記録": "定期開催"
+        }
+      }
+    }
+  },
+  "2": {
+    "title": "人事・労務関連書類",
+    "sub": {
+      "日々": {
+        "title": "日々",
+        "items": {
+          "職員（従業者）の勤務状況が確認できる書類": "タイムカード等"
+        }
+      },
+      "月次": {
+        "title": "月次",
+        "items": {
+          "勤務予定実績表（勤務形態一覧表）": "予定と実績の比較",
+          "従業者の給与の支払いが確認できる書類": "賃金台帳など",
+          "平均利用者数調書（平均利用者数計算シート）": "利用者数の月次集計"
+        }
+      },
+      "年次": {
+        "title": "年次",
+        "items": {
+          "従業者の健康状態の把握が確認できる書類": "健康診断結果"
+        }
+      },
+      "随時／都度": {
+        "title": "随時／都度",
+        "items": {
+          "職員（従業者）の雇用状況等が確認できる書類": "雇用契約書等",
+          "従業者の資格証": "",
+          "従業者の守秘義務が確認できる書類": "誓約書等"
+        }
+      }
+    }
+  },
+  "3": {
+    "title": "研修・訓練等",
+    "sub": {
+      "研修・訓練": {
+        "title": "研修・訓練",
+        "items": {
+          "資料の策定と作成": "旧:研修・訓練用資料の策定と作成",
+          "実施予定日の設定と記録": "旧:研修・訓練・見直しに関する記録"
+        }
+      },
+      "見直し、委員会及び会議": {
+        "title": "見直し、委員会及び会議",
+        "items": {
+          "課題・議題の策定と記録": "旧:会議、各委員会活動などの記録"
+        }
+      }
+    }
+  },
+  "4": {
+    "title": "運営・基本管理書類",
+    "sub": {
+      "随時／都度": {
+        "title": "随時／都度",
+        "items": {
+          "運営規程": "最新の規程",
+          "各種対応マニュアル": "苦情、事故、感染症など",
+          "預り金等管理規程": "",
+          "事業所のパンフレット": "",
+          "指定申請書・変更届出書": "",
+          "集団研修の資料": "",
+          "協力医療機関との契約書、連携記録書": ""
+        }
+      },
+      "年次": {
+        "title": "年次",
+        "items": {
+          "非常災害対策に関する書類": "避難訓練記録等"
+        }
+      }
+    }
+  },
+  "5": {
+    "title": "契約・利用者関連・請求書類",
+    "sub": {
+      "都度": {
+        "title": "都度",
+        "items": {
+          "重要事項説明書・利用契約書・同意書（３点セット）": "",
+          "受給者証の写し": "",
+          "契約内容報告書の写し": "",
+          "法定代理受領通知": "",
+          "請求書・領収証": ""
+        }
+      },
+      "月次": {
+        "title": "月次",
+        "items": {
+          "介護給付費等の明細書の写し": "",
+          "各種加算の算定根拠資料": ""
+        }
+      }
+    }
+  },
+  "6": {
+    "title": "財務・保険関連",
+    "sub": {
+      "月次": {
+        "title": "月次",
+        "items": {
+          "会計書類（BS、PL）": "会計"
+        }
+      },
+      "随時／都度": {
+        "title": "随時／都度",
+        "items": {
+          "事業者賠償責任の保険証券": "更新時等"
+        }
+      }
+    }
+  }
 };
 
-/*********************
-  メニューHTML生成
-*********************/
+/*************************************************
+  メニューを生成する関数
+*************************************************/
 function buildMenuHTML(menuData) {
   let html = "<ul>";
   for (let catKey in menuData) {
@@ -42,35 +190,35 @@ function buildMenuHTML(menuData) {
   return html;
 }
 
-/*********************
-  onLoad
-*********************/
+/*************************************************
+  ページ読み込み時の初期処理
+*************************************************/
 document.addEventListener("DOMContentLoaded", () => {
-  // メニュー構築
+  // ----- 左メニュー生成 -----
   const leftMenuEl = document.getElementById("left-menu");
   leftMenuEl.innerHTML = buildMenuHTML(menuData);
 
-  // イベント/研修データを取得
+  // ----- イベントデータ, 研修データを取得 -----
   globalEvents = JSON.parse(document.getElementById("event-data").textContent);
   globalTrainingData = JSON.parse(document.getElementById("training-data").textContent);
 
-  // メニュー折りたたみ
+  // ----- メニューの折りたたみ操作 -----
   leftMenuEl.addEventListener("click", (e) => {
     e.preventDefault();
     let target = e.target;
     if (target.tagName === "SPAN") {
       target = target.parentElement;
     }
-    // 大分類をクリック -> 他を閉じる
+    // 大分類をクリック -> 他の大分類を閉じる
     if (target.hasAttribute("data-cat")) {
       leftMenuEl.querySelectorAll("li[data-cat]").forEach(li => {
         if (li !== target) {
-          let sm = li.querySelector(".sub-menu");
+          const sm = li.querySelector(".sub-menu");
           if (sm) sm.classList.add("hidden");
         }
       });
     }
-    // サブメニュー トグル
+    // サブメニューをトグル
     const childUL = target.querySelector("ul");
     if (childUL) {
       childUL.classList.toggle("hidden");
@@ -78,16 +226,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // 選択状態クリア
     leftMenuEl.querySelectorAll("li").forEach(li => li.classList.remove("selected"));
 
-    // 最下層をクリック
+    // 最下層項目(data-item)がクリックされた場合
     if (target.hasAttribute("data-item")) {
       target.classList.add("selected");
       const itemKey = target.getAttribute("data-item");
       const catKey = target.closest("li[data-cat]").getAttribute("data-cat");
-      // 研修カテゴリの場合、特別UI
+      // 研修カテゴリ( "3" )の場合は特殊UI
       if (catKey === "3") {
         renderTrainingManageUI(itemKey);
       } else {
-        // 通常
+        // 通常の表示
         document.getElementById("detail-header").innerText = itemKey;
         document.getElementById("detail-content").innerHTML = `<p>${itemKey}</p>`;
       }
@@ -95,18 +243,21 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
   });
 
-  // カレンダー表示
+  // ----- カレンダー初期表示 -----
   const today = new Date();
   renderGlobalCalendar(today.getFullYear(), today.getMonth(), globalEvents);
 
-  // 前月・翌月
+  // 前月/翌月ボタン
   document.getElementById("prev-month-global").addEventListener("click", () => {
     const titleText = document.getElementById("global-calendar-title").textContent;
     const parts = titleText.split(" - ");
     let year = parseInt(parts[2]);
     let month = JP_MONTHS.indexOf(parts[0]);
     month--;
-    if (month < 0) { month = 11; year--; }
+    if (month < 0) {
+      month = 11; 
+      year--;
+    }
     renderGlobalCalendar(year, month, globalEvents);
   });
   document.getElementById("next-month-global").addEventListener("click", () => {
@@ -115,14 +266,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let year = parseInt(parts[2]);
     let month = JP_MONTHS.indexOf(parts[0]);
     month++;
-    if (month > 11) { month = 0; year++; }
+    if (month > 11) {
+      month = 0; 
+      year++;
+    }
     renderGlobalCalendar(year, month, globalEvents);
   });
 
-  // 今月の予定一覧
+  // ----- 今月の予定一覧 -----
   renderScheduleList();
 
-  // モーダル外側クリック -> 閉じる
+  // ----- モーダルの外側クリックで閉じる処理 -----
   document.getElementById("training-detail-modal").addEventListener("click", (evt) => {
     if (evt.target.id === "training-detail-modal") {
       closeTrainingDetail();
@@ -145,23 +299,23 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-/*********************
+/*************************************************
   今月の予定一覧
-   - 「今月の予定一覧」という見出し（<h3>）を追加し、クリックで全件モーダル
-   - 〇マーク + 予定日 + 予定名
-*********************/
+   - 画面には2カラム(最大10件)を表示
+   - 「今月の予定一覧」という見出しをクリック -> 全件モーダルで表示
+*************************************************/
 function renderScheduleList() {
   const scheduleListEl = document.getElementById("schedule-list");
 
+  // タイトル+h3を表示し、クリックで全リストモーダル
   let html = `<h3 id="month-list-title" style="cursor:pointer;">今月の予定一覧</h3>
               <div id="month-list-content"></div>`;
   scheduleListEl.innerHTML = html;
 
-  // h3クリックで全件表示モーダル
+  // 見出しクリック -> 今月全件モーダル
   document.getElementById("month-list-title").addEventListener("click", openMonthAllEventsModal);
 
-  // 簡易表示(2カラム, 最大10件)
-  const monthListContentEl = document.getElementById("month-list-content");
+  // 今月のイベントを抽出
   const today = new Date();
   const y = today.getFullYear();
   const m = ("0" + (today.getMonth() + 1)).slice(-2);
@@ -169,69 +323,71 @@ function renderScheduleList() {
 
   let monthEvents = globalEvents.filter(e => e.dueDate.startsWith(monthStr));
   if (monthEvents.length === 0) {
-    monthListContentEl.innerHTML = `<p>今月の予定はありません。</p>`;
+    document.getElementById("month-list-content").innerHTML = "<p>今月の予定はありません。</p>";
     return;
   }
 
-  // 優先度ソート
+  // ソート(優先度 -> 日付)
   monthEvents.sort((a, b) => {
     const prioA = getEventPriority(a);
     const prioB = getEventPriority(b);
     if (prioA !== prioB) return prioA - prioB;
-    // 同優先度なら日付昇順
     return new Date(a.dueDate) - new Date(b.dueDate);
   });
 
+  // 上位10件
   const top10 = monthEvents.slice(0, 10);
   const leftover = (monthEvents.length > 10) ? (monthEvents.length - 10) : 0;
 
   const col1 = top10.slice(0, 5);
   const col2 = top10.slice(5);
 
-  let htmlCols = `<div class="month-schedule-container">
-                    <ul class="month-schedule-col">`;
-
+  let contentHTML = `<div class="month-schedule-container">
+                       <ul class="month-schedule-col">`;
   // 左5行
   col1.forEach(ev => {
     const line = `${getEventCircle(ev)} ${ev.dueDate} - ${ev.title}`;
-    htmlCols += `<li onclick="clickScheduleItem('${ev.dueDate}')"
-                     title="クリックでこの日の予定一覧が開きます">
-                  ${line}
-                 </li>`;
+    contentHTML += `
+      <li onclick="clickScheduleItem('${ev.dueDate}')"
+          title="クリックでこの日の予定一覧が開きます">
+        ${line}
+      </li>`;
   });
+  // 足りない分
   for (let i = col1.length; i < 5; i++) {
-    htmlCols += `<li class="empty-slot"></li>`;
+    contentHTML += `<li class="empty-slot"></li>`;
   }
-  htmlCols += `</ul><ul class="month-schedule-col">`;
+  contentHTML += `</ul><ul class="month-schedule-col">`;
   // 右5行
   col2.forEach((ev, idx) => {
     if (idx === 4 && leftover > 0) {
-      htmlCols += `<li>他 ${leftover}件の予定あり</li>`;
+      contentHTML += `<li>他 ${leftover}件の予定あり</li>`;
     } else {
       const line = `${getEventCircle(ev)} ${ev.dueDate} - ${ev.title}`;
-      htmlCols += `<li onclick="clickScheduleItem('${ev.dueDate}')"
-                       title="クリックでこの日の予定一覧が開きます">
-                    ${line}
-                   </li>`;
+      contentHTML += `
+        <li onclick="clickScheduleItem('${ev.dueDate}')"
+            title="クリックでこの日の予定一覧が開きます">
+          ${line}
+        </li>`;
     }
   });
   if (col2.length < 5) {
     for (let i = col2.length; i < 5; i++) {
       if (i === 4 && leftover > 0) {
-        htmlCols += `<li>他 ${leftover}件の予定あり</li>`;
+        contentHTML += `<li>他 ${leftover}件の予定あり</li>`;
       } else {
-        htmlCols += `<li class="empty-slot"></li>`;
+        contentHTML += `<li class="empty-slot"></li>`;
       }
     }
   }
-  htmlCols += `</ul></div>`;
+  contentHTML += `</ul></div>`;
 
-  monthListContentEl.innerHTML = htmlCols;
+  document.getElementById("month-list-content").innerHTML = contentHTML;
 }
 
-/*********************
-  全件一覧モーダル
-*********************/
+/*************************************************
+  「今月の予定一覧」見出しをクリック -> 今月全予定をモーダルで表示
+*************************************************/
 function openMonthAllEventsModal() {
   const today = new Date();
   const y = today.getFullYear();
@@ -244,7 +400,7 @@ function openMonthAllEventsModal() {
     return;
   }
 
-  // ソート
+  // ソート(優先度 -> 日付)
   monthEvents.sort((a, b) => {
     const prioA = getEventPriority(a);
     const prioB = getEventPriority(b);
@@ -259,8 +415,7 @@ function openMonthAllEventsModal() {
       <div class="day-event-item">
         ${line}
         <button class="detail-btn" onclick="openEventDetailModal(${ev.event_id})">詳細</button>
-      </div>
-    `;
+      </div>`;
   });
 
   document.getElementById("month-all-events-content").innerHTML = html;
@@ -270,32 +425,9 @@ function closeMonthAllEventsModal() {
   document.getElementById("month-all-events-modal").style.display = "none";
 }
 
-/*********************
-  リストクリック -> day-events-modal
-*********************/
-function clickScheduleItem(dateStr) {
-  const dayEvents = globalEvents.filter(ev => ev.dueDate === dateStr);
-  if (dayEvents.length === 0) return;
-  openDayEventsModal(dateStr, dayEvents);
-}
-
-/*********************
-  イベントの優先度
-   1=期限超過, 2=1週間未満, 3=それ以外(未完了), 4=完了
-*********************/
-function getEventPriority(ev) {
-  if (ev.status === "完了") return 4;
-  const now = new Date();
-  const due = new Date(ev.dueDate + "T00:00:00");
-  const diff = (due - now)/(1000*3600*24);
-  if (diff < 0) return 1;   // 過ぎた
-  if (diff < 7) return 2;   // 1週間未満
-  return 3;                 // それ以外
-}
-
-/*********************
-  カレンダー
-*********************/
+/*************************************************
+  カレンダー関連
+*************************************************/
 const JP_MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 const EN_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -306,6 +438,7 @@ function formatDate(date) {
   return `${y}-${m}-${d}`;
 }
 
+/** カレンダー表示 */
 function renderGlobalCalendar(year, month, events) {
   const calEl = document.getElementById("big-calendar");
   const titleEl = document.getElementById("global-calendar-title");
@@ -313,7 +446,7 @@ function renderGlobalCalendar(year, month, events) {
 
   if (calEl) {
     calEl.innerHTML = generateCalendar(year, month, events);
-    // 各日セルクリック -> day-events-modal
+    // 日セルクリック -> day-events-modal
     document.querySelectorAll(".calendar-cell").forEach(cell => {
       cell.addEventListener("click", () => {
         const dateStr = cell.getAttribute("data-date");
@@ -326,10 +459,7 @@ function renderGlobalCalendar(year, month, events) {
   }
 }
 
-/**
- * カレンダー生成
- * 各日: 最大4行表示, 5件目以降は "その他X件"
- */
+/** カレンダーhtml生成 */
 function generateCalendar(year, month, events) {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month+1, 0);
@@ -344,13 +474,13 @@ function generateCalendar(year, month, events) {
   html += "</tr></thead><tbody>";
 
   let currentDay = 1;
-  const weeksCount = Math.ceil((firstWeekDay + totalDays)/7);
+  const weeksCount = Math.ceil((firstWeekDay + totalDays) / 7);
 
   for (let w = 0; w < weeksCount; w++) {
     html += "<tr>";
     for (let d = 0; d < 7; d++) {
-      const cellIndex = w*7 + d;
-      if (cellIndex < firstWeekDay || currentDay > totalDays) {
+      const cellIdx = w*7 + d;
+      if (cellIdx < firstWeekDay || currentDay > totalDays) {
         html += "<td></td>";
       } else {
         const dateObj = new Date(year, month, currentDay);
@@ -358,15 +488,17 @@ function generateCalendar(year, month, events) {
         const dayEvents = events.filter(e => e.dueDate === dateStr);
 
         let cellContent = `<div class="calendar-date">${currentDay}</div>`;
+        // 4行まで表示
         dayEvents.forEach((ev, idx) => {
           if (idx === 3 && dayEvents.length > 4) {
-            // 4行目
             const left = dayEvents.length - 3;
             cellContent += `<div class="event-item small-calendar-font">その他${left}件</div>`;
-            return; // 打ち切り
+            return;
           }
           if (idx < 4) {
-            cellContent += `<div class="event-item small-calendar-font">${getEventCircle(ev)}${truncateTitle(ev.title)}</div>`;
+            cellContent += `<div class="event-item small-calendar-font">
+                              ${getEventCircle(ev)}${truncateTitle(ev.title)}
+                            </div>`;
           }
         });
 
@@ -376,37 +508,50 @@ function generateCalendar(year, month, events) {
     }
     html += "</tr>";
   }
+
   html += "</tbody>";
   return html;
 }
 
-/*********************
-  〇マーク色分けだけ返す
-*********************/
+/** タイトルを6文字程度で省略 */
+function truncateTitle(txt) {
+  if (txt.length > 6) {
+    return txt.slice(0,6) + "…";
+  }
+  return txt;
+}
+
+/*************************************************
+  イベント表示用
+  - getEventCircle(ev): 〇色分け
+  - getEventPriority(ev): ソート用
+*************************************************/
 function getEventCircle(ev) {
   if (ev.status === "完了") {
     return `<span class="circle circle-green">●</span>`;
   }
-  // 未完了
   const due = new Date(ev.dueDate + "T00:00:00");
   const now = new Date();
   const diff = (due - now)/(1000*3600*24);
+
   if (diff < 0) return `<span class="circle blinking-red">●</span>`;
   if (diff < 7) return `<span class="circle circle-red">●</span>`;
   return `<span class="circle circle-yellow">●</span>`;
 }
 
-/** タイトルを6文字+…に */
-function truncateTitle(title) {
-  if (title.length > 6) {
-    return title.substr(0,6) + "…";
-  }
-  return title;
+function getEventPriority(ev) {
+  if (ev.status === "完了") return 4; // 完了
+  const now = new Date();
+  const due = new Date(ev.dueDate + "T00:00:00");
+  const diff = (due - now)/(1000*3600*24);
+  if (diff < 0) return 1; // 過ぎてる
+  if (diff < 7) return 2; // < 1週間
+  return 3;               // それ以外
 }
 
-/*********************
-  日の予定一覧モーダル
-*********************/
+/*************************************************
+  日別イベント一覧モーダル
+*************************************************/
 function openDayEventsModal(dateStr, dayEvents) {
   let html = `<h3>${dateStr}の予定</h3>`;
   dayEvents.forEach(ev => {
@@ -425,10 +570,11 @@ function closeDayEventsModal() {
   document.getElementById("day-events-modal").style.display = "none";
 }
 
-/*********************
+/*************************************************
   イベント詳細モーダル
-   - 上部に frequency(実施回数) も表示 (trainingのみ)
-*********************/
+  - training イベントなら frequency(実施回数)を表示
+  - 3チェック必須 + 次回の予定日
+*************************************************/
 function openEventDetailModal(eventId) {
   const ev = globalEvents.find(x => x.event_id === eventId);
   if (!ev) {
@@ -442,18 +588,15 @@ function openEventDetailModal(eventId) {
   html += `<p>【ステータス】${ev.status}</p>`;
   html += `<p>【予定日】${ev.dueDate}</p>`;
 
-  // frequency 表示
-  if (ev.type === "training" || ev.event_type === "training") {
-    // training_details に同タイトルがあれば frequency があるはず
-    if (globalTrainingData[ev.title]) {
-      let freq = globalTrainingData[ev.title].frequency || "";
-      if (freq) {
-        html += `<p>【実施回数】${freq}</p>`;
-      }
+  // もし研修( event_type=='training' )で、training_detailsがあれば frequencyを表示
+  if ((ev.type === "training" || ev.event_type === "training") && globalTrainingData[ev.title]) {
+    let freq = globalTrainingData[ev.title].frequency || "";
+    if (freq) {
+      html += `<p>【実施回数】${freq}</p>`;
     }
   }
 
-  // 3つのチェック要素 + 次回の予定日
+  // 次回の予定日を自動計算
   let nextDate = "";
   if ((ev.type === "training" || ev.event_type === "training") && globalTrainingData[ev.title]) {
     const freq = globalTrainingData[ev.title].frequency || "";
@@ -485,7 +628,7 @@ function openEventDetailModal(eventId) {
   document.getElementById("event-detail-content").innerHTML = html;
   document.getElementById("event-detail-modal").style.display = "block";
 
-  // 全チェックなら完了ボタン有効
+  // 全チェックで完了ボタン活性化
   const cbs = document.querySelectorAll(".complete-checkbox");
   const completeBtn = document.getElementById("complete-btn");
   cbs.forEach(cb => {
@@ -495,7 +638,7 @@ function openEventDetailModal(eventId) {
     });
   });
 
-  // 完了処理
+  // 予定を完了する
   completeBtn.addEventListener("click", () => {
     fetch("/complete_event", {
       method: "POST",
@@ -505,7 +648,7 @@ function openEventDetailModal(eventId) {
     .then(msg => {
       if (msg === "success") {
         alert("完了にしました。");
-        location.reload(); // DB更新後リロードで連動反映
+        location.reload(); // ページ再読み込みで連動反映
       } else {
         alert("エラー: " + msg);
       }
@@ -540,7 +683,7 @@ function openEventDetailModal(eventId) {
     });
   });
 
-  // 削除
+  // 予定を削除する
   document.getElementById("delete-event-btn").addEventListener("click", () => {
     if (!confirm("本当に削除しますか？")) return;
     fetch("/delete_event", {
@@ -566,23 +709,20 @@ function closeEventDetailModal() {
   document.getElementById("event-detail-modal").style.display = "none";
 }
 
-/*********************
-  次回の予定日計算
-  "年2回" => +6ヶ月、それ以外 => +12ヶ月
-*********************/
-function computeNextDate(currentDueDate, freq) {
-  const base = new Date(currentDueDate + "T00:00:00");
+/** frequencyから次回予定日を計算 ("年2回"なら6ヶ月、それ以外は12ヶ月) */
+function computeNextDate(baseDateStr, freq) {
+  const base = new Date(baseDateStr + "T00:00:00");
   if (freq.includes("年2回")) {
-    base.setMonth(base.getMonth()+6);
+    base.setMonth(base.getMonth() + 6);
   } else {
-    base.setFullYear(base.getFullYear()+1);
+    base.setFullYear(base.getFullYear() + 1);
   }
   return formatDate(base);
 }
 
-/*********************
-  研修・訓練
-*********************/
+/*************************************************
+  研修・訓練 管理
+*************************************************/
 const trainingOrder = [
   "災害に係る業務継続計画(BCP)_研修",
   "災害に係る業務継続計画(BCP)_訓練",
@@ -604,6 +744,9 @@ const committeeOrder = [
   "ハラスメント(パワハラ)対策_委員会"
 ];
 
+/**
+ * 研修メニュー選択時のUI構築
+ */
 function renderTrainingManageUI(itemKey) {
   let filteredItems = {};
 
@@ -627,35 +770,37 @@ function renderTrainingManageUI(itemKey) {
   }
 
   let titles = Object.keys(filteredItems);
-  // ソート
+
+  // ソート(既定の順序)
   if (itemKey === "資料の策定と作成" || itemKey === "実施予定日の設定と記録") {
     titles.sort((a,b) => {
-      let idxA = trainingOrder.indexOf(a);
-      let idxB = trainingOrder.indexOf(b);
-      if (idxA<0) idxA=9999;
-      if (idxB<0) idxB=9999;
-      return idxA - idxB;
+      const idxA = trainingOrder.indexOf(a);
+      const idxB = trainingOrder.indexOf(b);
+      const realA = (idxA === -1)?9999:idxA;
+      const realB = (idxB === -1)?9999:idxB;
+      return realA - realB;
     });
-  } else {
+  } else if (itemKey === "課題・議題の策定と記録") {
     titles.sort((a,b) => {
-      let idxA = committeeOrder.indexOf(a);
-      let idxB = committeeOrder.indexOf(b);
-      if (idxA<0) idxA=9999;
-      if (idxB<0) idxB=9999;
-      return idxA - idxB;
+      const idxA = committeeOrder.indexOf(a);
+      const idxB = committeeOrder.indexOf(b);
+      const realA = (idxA === -1)?9999:idxA;
+      const realB = (idxB === -1)?9999:idxB;
+      return realA - realB;
     });
   }
 
-  // 出力
+  // 一覧HTMLを生成
   let html = `<div id="training-list-container">`;
-  titles.forEach(title => {
+  for (let i = 0; i < titles.length; i++) {
+    const title = titles[i];
     const data = filteredItems[title];
+
     let label = title;
     if (data.deductionRisk === "該当") {
       label += ` <span class="red-text">←減算対象</span>`;
     }
-
-    // 連動: data.status が「完了」なら完了表示、それ以外は「未完了(～)」
+    // status連動
     let statusHTML = "";
     if (data.status === "完了") {
       statusHTML = `<span class="status complete">【完了】</span>`;
@@ -675,7 +820,7 @@ function renderTrainingManageUI(itemKey) {
         </div>
       </div>
     `;
-  });
+  }
   html += `</div>`;
 
   let headerText = itemKey;
@@ -687,10 +832,11 @@ function renderTrainingManageUI(itemKey) {
     headerText = "課題・議題の策定と記録（見直し・委員会・会議）";
   }
 
+  // 表示
   document.getElementById("detail-header").innerText = headerText;
   document.getElementById("detail-content").innerHTML = html;
 
-  // クリック -> モーダル
+  // 各アイテムクリック -> モーダル
   document.querySelectorAll(".training-item-box").forEach(box => {
     box.addEventListener("click", () => {
       const title = box.getAttribute("data-title");
@@ -701,6 +847,9 @@ function renderTrainingManageUI(itemKey) {
   });
 }
 
+/**
+ * 研修・訓練モーダルを表示
+ */
 function showTrainingModal(title, data, mode) {
   let modalHTML = `<h2>${title}</h2>`;
   modalHTML += `<p><strong>種類:</strong> ${data.type || ""}</p>`;
@@ -717,6 +866,7 @@ function showTrainingModal(title, data, mode) {
   }
 
   if (mode === "資料の策定と作成") {
+    // 資料作成ガイド
     modalHTML += `<h3>資料作成ガイド</h3>`;
     if (data.manualGuide && typeof data.manualGuide === "object") {
       if (data.manualGuide.tableOfContents) {
@@ -738,16 +888,18 @@ function showTrainingModal(title, data, mode) {
     } else {
       modalHTML += `<p>資料作成ガイドはありません。</p>`;
     }
+    // ダウンロードテンプレ
     const docLink = data.ManualTemplate
       ? `/static/sample/${data.ManualTemplate}`
       : "/static/sample/sample.docx";
     modalHTML += `
       <h4>サンプルファイル(Word)</h4>
-      <p>※このマニュアルは施設に合わせて修正してください</p>
+      <p>※このマニュアルは施設に合わせて修正してください。</p>
       <a href="${docLink}" download>ダウンロード</a>
     `;
   }
   else if (mode === "実施予定日の設定と記録") {
+    // 予定日の設定フォーム
     modalHTML += `
       <h3>実施予定日の設定</h3>
       <form id="planned-date-form">
@@ -838,36 +990,40 @@ function showTrainingModal(title, data, mode) {
     `;
   }
 
+  // モーダル表示
   document.getElementById("training-detail-content").innerHTML = modalHTML;
   document.getElementById("training-detail-modal").style.display = "block";
 
-  // 予定日保存
+  // 実施予定日の保存処理
   if (mode === "実施予定日の設定と記録") {
-    const formEl = document.getElementById("planned-date-form");
-    formEl.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const fd = new FormData(formEl);
-      const postData = {
-        title: fd.get("title"),
-        planned_date: fd.get("planned_date")
-      };
-      fetch("/update_planned_date", {
-        method: "POST",
-        body: new URLSearchParams(postData)
-      })
-      .then(r => r.text())
-      .then(dateVal => {
-        alert("実施予定日を更新しました: " + dateVal);
-        location.reload();
-      })
-      .catch(err => {
-        console.error(err);
-        alert("予定日の更新に失敗しました。");
+    const plannedDateForm = document.getElementById("planned-date-form");
+    if (plannedDateForm) {
+      plannedDateForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fd = new FormData(plannedDateForm);
+        const postData = {
+          title: fd.get("title"),
+          planned_date: fd.get("planned_date")
+        };
+        fetch("/update_planned_date", {
+          method: "POST",
+          body: new URLSearchParams(postData)
+        })
+        .then(r => r.text())
+        .then(updated => {
+          alert("実施予定日を更新しました: " + updated);
+          location.reload();
+        })
+        .catch(err => {
+          console.error(err);
+          alert("予定日の更新に失敗しました。");
+        });
       });
-    });
+    }
   }
 }
 
+/** 研修モーダル閉じる */
 function closeTrainingDetail() {
   document.getElementById("training-detail-modal").style.display = "none";
 }
