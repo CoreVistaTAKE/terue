@@ -1,6 +1,6 @@
-/*********************
-  リセット
-*********************/
+/********************************************
+ * Block #A: リセット & グローバル
+********************************************/
 * {
   box-sizing: border-box;
   margin: 0;
@@ -14,9 +14,9 @@ body {
   font-size: 0.9rem;
 }
 
-/*********************
-  ヘッダー
-*********************/
+/********************************************
+ * Block #B: ヘッダー & フッター
+********************************************/
 .header {
   position: fixed;
   top: 0;
@@ -28,9 +28,6 @@ body {
   align-items: center;
   padding: 10px 20px;
   z-index: 9999;
-}
-.header-left {
-  margin-right: 10px;
 }
 .header-icon {
   height: 50px;
@@ -44,10 +41,6 @@ body {
   font-size: 0.9rem;
   color: #004080;
 }
-
-/*********************
-  フッター
-*********************/
 .footer {
   background: #e0efff;
   text-align: center;
@@ -56,65 +49,223 @@ body {
   margin-top: 20px;
 }
 
-/*********************
-  メインレイアウト
-*********************/
+/********************************************
+ * Block #C: レイアウト (左右スクロール)
+********************************************/
 .container {
   display: flex;
   margin-top: 10px;
-  min-height: calc(100vh - 140px);
+  height: calc(100vh - 140px);
+  background: #e3f2fd;
+  border: 2px solid #0080c0;
+  padding: 10px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 .sidebar {
-  width: 35%;
-  min-width: 250px;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
   background: #fff;
   border-right: 1px solid #ccc;
   padding: 20px;
+  overflow-y: auto;
 }
 .main-content {
   flex: 1;
   padding: 10px;
+  overflow-y: auto;
 }
 
-/*********************
-  メニュー
-*********************/
+/********************************************
+ * Block #D: メニュー関連
+********************************************/
+
 #left-menu ul {
   list-style: none;
   padding-left: 0;
 }
+
 #left-menu li {
-  padding: 8px;
+  position: relative;
   margin-bottom: 8px;
-  background: #f4f8fb;
   border: 1px solid #ccc;
   border-radius: 4px;
   cursor: pointer;
 }
+
+/* ▼全てのメニュー項目でマウスオーバー時に変化 */
 #left-menu li:hover {
-  background: #d0e7ff;
+  filter: brightness(0.95);
 }
-#left-menu li[data-cat] > .menu-title {
+
+/* ▼ 選択時スタイル */
+li.selected {
+  font-weight: bold;
+  color: #c00000;
+}
+
+/********************************************
+ * ▼ 運営サポート(黄系 #CCBFAF)
+********************************************/
+/* 大分類(基準): #CCBFAF + color #FFFFFF */
+.cat-support {
+  background-color: #CCBFAF;
+  color: #FFFFFF;
+  border: 2px solid #8E836E; /* やや濃い枠線 */
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.cat-support > .menu-title {
+  display: block;
+  padding: 0;
+  font-size: 1rem;
   font-weight: bold;
 }
+
+/* 中分類: #DED4C9, color #FFFFFF + 境界線 #643905 */
+.cat-support ul.sub-menu > li > .sub-title {
+  background-color: #DED4C9; 
+  color: #0f5a60;
+  display: inline-block;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+/* 小分類: #EBE5DE, color #4A4A4A */
+.cat-support ul.sub-menu ul.item-menu > li > .sub-title {
+  background-color: #EBE5DE;
+  color: #0f5a60;
+  display: inline-block;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  /* 小分類は文字境界線なし(指示通り color:#4A4A4A) */
+}
+
+/* 項目: #F5F2EF, color #333333 */
+.cat-support ul.sub-menu ul.item-menu li[data-item] {
+  background-color: #F5F2EF;
+  color: #333333;
+  margin: 3px 0;
+  padding: 4px;
+}
+
+
+/********************************************
+ * ▼ 日々・都度の入力(緑系 #7CCA45)
+********************************************/
+/* 大分類(基準): #7CCA45 + color #FFFFFF */
+.cat-daily {
+  background-color: #7CCA45;
+  color: #FFFFFF;
+  border: 2px solid #469C14; /* 濃い緑 */
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.cat-daily > .menu-title {
+  display: block;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* 中分類: #9DD978, color #FFFFFF + 境界線 #03410d */
+.cat-daily ul.sub-menu > li > .sub-title {
+  background-color: #E3F6D4;
+  color: #333333;
+  display: inline-block;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+/* 小分類: #C0E8A5, color #4A4A4A */
+.cat-daily ul.sub-menu ul.item-menu > li > .sub-title {
+  background-color: #E3F6D4;
+  color: #333333;
+  display: inline-block;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+/* 項目: #E3F6D4, color #333333 */
+.cat-daily ul.sub-menu ul.item-menu li[data-item] {
+  background-color: #E3F6D4;
+  color: #333333;
+  margin: 3px 0;
+  padding: 4px;
+}
+
+
+/********************************************
+ * ▼ 運営書類一覧と保存(青系 #6BA5BE)
+********************************************/
+/* 大分類(基準): #6BA5BE + color #FFFFFF */
+.cat-documents {
+  background-color: #6BA5BE;
+  color: #FFFFFF;
+  border: 2px solid #3E6A7B; /* 濃い青 */
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.cat-documents > .menu-title {
+  display: block;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* 中分類: #8CBCD0, color #FFFFFF + 境界線 #084e6d */
+.cat-documents ul.sub-menu > li > .sub-title {
+  background-color: #D7E6EE;
+  color: #084e6d;
+  display: inline-block;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+/* 小分類: #B2D1DF, color #4A4A4A */
+.cat-documents ul.sub-menu ul.item-menu > li > .sub-title {
+  background-color: #D7E6EE;
+  color: #084e6d;
+  display: inline-block;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+/* 項目: #D7E6EE, color #333333 */
+.cat-documents ul.sub-menu ul.item-menu li[data-item] {
+  background-color: #D7E6EE;
+  color: #333333;
+  margin: 3px 0;
+  padding: 4px;
+}
+
+
+/********************************************
+ * ▼ サブメニュー余白 & 隠しクラス
+********************************************/
 .sub-menu,
 .item-menu {
   margin-left: 20px;
   padding-left: 10px;
+  margin-top: 10px;
 }
+
 .hidden {
   display: none;
 }
-li.selected {
-  font-weight: bold;
-}
-
-/*********************
-  詳細エリア
-*********************/
+/********************************************
+ * Block #E: 詳細エリア (detail-section等)
+********************************************/
 .detail-section {
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 2px solid #005b9c;
+  background: #f8fafe;
   border-radius: 4px;
   margin-bottom: 20px;
   padding: 15px;
@@ -126,23 +277,21 @@ li.selected {
   font-weight: bold;
 }
 
-/*********************
-  カレンダー
-*********************/
+/********************************************
+ * Block #F: カレンダー表示
+********************************************/
 .calendar-section {
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 2px solid #005b9c;
+  background: #f8fafe;
   padding: 10px;
   margin-bottom: 20px;
+  border-radius: 4px;
 }
 .calendar-legend {
   display: flex;
   gap: 10px;
   margin: 0 0 10px 0;
   align-items: center;
-}
-.legend-item {
-  font-size: 0.9rem;
 }
 .calendar-header {
   display: flex;
@@ -152,14 +301,10 @@ li.selected {
   margin-bottom: 5px;
   padding: 5px 10px;
 }
-.calendar-title {
-  font-size: 1rem;
-  font-weight: bold;
-}
 .big-calendar {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* 幅固定 */
+  table-layout: fixed;
 }
 .big-calendar th,
 .big-calendar td {
@@ -175,29 +320,46 @@ li.selected {
   top: 2px;
   right: 4px;
   font-weight: bold;
-  z-index: 1;
 }
 .calendar-cell {
   cursor: pointer;
 }
-.calendar-cell:hover {
-  background: #f0fafc;
-}
 .small-calendar-font {
   font-size: 0.7rem;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
+}
+.circle {
+  margin-right: 2px;
+}
+.circle-green { color: green; }
+.circle-red   { color: red; }
+.circle-yellow{ color: #c7c700; }
+.blinking-red {
+  animation: blinkingText 1s infinite;
+  color: red;
+}
+@keyframes blinkingText {
+  0%   { opacity: 1; }
+  50%  { opacity: 0; }
+  100% { opacity: 1; }
+}
+.nav-button {
+  background: #ccc;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 0.9rem;
 }
 
-/*********************
-  今月の予定一覧
-*********************/
+/********************************************
+ * Block #G: 今月の予定一覧 (schedule-list)
+********************************************/
 .schedule-list {
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 2px solid #005b9c;
+  background: #f8fafe;
   padding: 10px;
   margin-bottom: 20px;
+  border-radius: 4px;
 }
 .month-schedule-container {
   display: flex;
@@ -211,7 +373,7 @@ li.selected {
   max-width: 50%;
 }
 .month-schedule-col li {
-  white-space: nowrap; 
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 3px 0;
@@ -225,9 +387,9 @@ li.selected {
   cursor: default;
 }
 
-/*********************
-  モーダル
-*********************/
+/********************************************
+ * Block #H: モーダル関連
+********************************************/
 .modal {
   display: none;
   position: fixed;
@@ -245,6 +407,7 @@ li.selected {
   position: relative;
   max-height: 80%;
   overflow-y: auto;
+  border-radius: 6px;
 }
 .modal-close {
   position: absolute;
@@ -254,9 +417,95 @@ li.selected {
   cursor: pointer;
 }
 
-/*********************
-  研修・訓練アイテム一覧
-*********************/
+/********************************************
+ * Block #I: イベント一覧 (day-event-item 等)
+********************************************/
+.day-event-item {
+  margin: 5px 0;
+}
+.detail-btn {
+  margin-left: 10px;
+  font-size: 0.8rem;
+}
+
+/********************************************
+ * Block #J: 汎用ボタン
+********************************************/
+.green-btn {
+  background: #00ba00;
+  color: #fff;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.red-btn {
+  background: #ff4a4a;
+  color: #fff;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+/********************************************
+ * Block #K: レスポンシブ対応
+********************************************/
+@media screen and (max-width:768px) {
+  .container {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ccc;
+    max-height: 200px; /* メニュー多い場合にスクロール */
+    overflow-y: auto;
+  }
+  .main-content {
+    width: 100%;
+    max-height: calc(100vh - 340px);
+    overflow-y: auto;
+  }
+}
+
+/********************************************
+ * Block #L: レポートフォーム等 (input/textarea)
+********************************************/
+input[type="text"],
+input[type="date"],
+input[type="number"],
+textarea {
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 0.9rem;
+  margin: 2px 0;
+}
+.report-label {
+  display: inline-block;
+  width: 140px;
+  font-weight: bold;
+  text-align: right;
+  margin-right: 8px;
+}
+textarea::placeholder {
+  color: #999;
+  font-size: 0.9rem;
+}
+.select-small {
+  width: 60px;
+}
+.select-medium {
+  width: 120px;
+}
+
+/********************************************
+ * Block #M: 研修・訓練アイテム一覧
+********************************************/
 .training-item-box {
   border: 1px solid #ccc;
   background: #fefefe;
@@ -287,73 +536,9 @@ li.selected {
   color: red;
 }
 
-/*********************
-  日イベント一覧
-*********************/
-.day-event-item {
-  margin: 5px 0;
-}
-.detail-btn {
-  margin-left: 10px;
-  font-size: 0.8rem;
-}
-
-/*********************
-  カラーバリエーション
-*********************/
-.circle {
-  margin-right: 2px;
-}
-.circle-green {
-  color: green;
-}
-.circle-red {
-  color: red;
-}
-.circle-yellow {
-  color: #c7c700;
-}
-.blinking-red {
-  animation: blinkingText 1s infinite;
-  color: red;
-}
-@keyframes blinkingText {
-  0% { opacity: 1; }
-  50% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-/*********************
-  ボタン色
-*********************/
-.green-btn {
-  background: #00ba00;
-  color: #fff;
-  border: none;
-  padding: 5px 8px;
-  cursor: pointer;
-  border-radius: 3px;
-}
-.red-btn {
-  background: #ff4a4a;
-  color: #fff;
-  border: none;
-  padding: 5px 8px;
-  cursor: pointer;
-  border-radius: 3px;
-}
-.nav-button {
-  background: #ccc;
-  border: none;
-  padding: 4px 8px;
-  cursor: pointer;
-  border-radius: 3px;
-  font-size: 0.9rem;
-}
-
-/*********************
-  予定日入力強調
-*********************/
+/********************************************
+ * Block #N: 予定日入力強調
+********************************************/
 .planned-date-label {
   font-weight: bold;
   color: #e30000;
@@ -367,22 +552,39 @@ li.selected {
   margin-top: 5px;
 }
 
-/*********************
-  レスポンシブ
-*********************/
-@media screen and (max-width:768px) {
-  .container {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #ccc;
-  }
-  .main-content {
-    width: 100%;
-  }
-  .month-schedule-col li {
-    width: 100%;
-  }
+/********************************************
+ * Block #O: フィールドセット(折り畳み)
+********************************************/
+.collapsible {
+  border: 1px solid #aaa;
+  margin-bottom: 15px;
+  position: relative;
+}
+.collapsible legend {
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 8px;
+}
+.collapsible .fold-icon {
+  margin-left: 4px;
+}
+.collapsible.open .fieldset-content {
+  display: block;
+}
+.collapsible.closed .fieldset-content {
+  display: none;
+}
+.label-right {
+  display: inline-block;
+  width: 120px;
+  text-align: right;
+  margin-right: 6px;
+  font-weight: bold;
+}
+.form-row {
+  margin: 4px 0;
+}
+legend {
+  font-weight: bold;
+  margin-left: 10px;
 }

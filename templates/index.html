@@ -4,13 +4,10 @@
   <meta charset="UTF-8">
   <title>VisOneSystem - 障がい福祉版 総合管理システム</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- アイコン / マニフェスト -->
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
-  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <!-- JS -->
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
@@ -27,14 +24,11 @@
   </header>
   
   <div class="container">
-    <!-- 左メニュー -->
     <aside class="sidebar">
       <div id="left-menu"></div>
     </aside>
 
-    <!-- 右側メイン -->
     <main class="main-content">
-      <!-- 詳細表示 -->
       <section class="detail-section" id="detail-section">
         <div class="detail-header" id="detail-header">詳細表示エリア</div>
         <div id="detail-content">
@@ -42,16 +36,9 @@
         </div>
       </section>
 
-      <!-- 今月の予定一覧 -->
-      <section id="schedule-list" class="schedule-list">
-        <!-- JSで 中に <h3 id="month-list-title">今月の予定一覧</h3> を出力するため、
-             もしくは HTMLに直接書いておき script.js 側でIDを取る形でもOK -->
-      </section>
+      <section id="schedule-list" class="schedule-list"></section>
 
-      <!-- カレンダー -->
       <section class="calendar-section" id="global-calendar-section">
-
-        <!-- 〇マークの凡例 -->
         <div class="calendar-legend">
           <span class="legend-item">
             <span class="circle circle-green">●</span>完了
@@ -66,7 +53,6 @@
             <span class="circle blinking-red">●</span>予定日超過
           </span>
         </div>
-
         <div id="calendar-header" class="calendar-header">
           <button id="prev-month-global" class="nav-button">&lt; 先月</button>
           <span id="global-calendar-title" class="calendar-title">--月 - MonthName -</span>
@@ -96,7 +82,7 @@
     </div>
   </div>
 
-  <!-- イベント詳細モーダル(各イベントの「詳細」ボタンから表示) -->
+  <!-- イベント詳細モーダル(「詳細」ボタンから) -->
   <div id="event-detail-modal" class="modal">
     <div class="modal-content">
       <span class="modal-close" onclick="closeEventDetailModal()">×</span>
@@ -113,14 +99,14 @@
   </div>
 
   <footer class="footer">
-    <p>VisOneSystem™ &amp; VisOneAI™ は CoreVista-Japan の商標です。© 2025 CoreVista-Japan. All Rights Reserved.</p>
+    <p>VisOneSystem™ &amp; VisOneAI™ は CoreVista-Japan の商標です。 © 2025 CoreVista-Japan. All Rights Reserved.</p>
   </footer>
 
   <!-- イベントデータ -->
   <script id="event-data" type="application/json">
     {{ events|tojson|safe }}
   </script>
-  <!-- 研修マスタ(= training_details) -->
+  <!-- 研修マスタ -->
   <script id="training-data" type="application/json">
     {{ training_details|tojson|safe }}
   </script>
