@@ -654,10 +654,6 @@ def show_daily_report(report_id):
 
 @app.route("/daily_report_pdf/<int:report_id>")
 def daily_report_pdf(report_id):
-    """
-    業務日誌PDF印刷
-    ※ フォントを反映するため、styles.css を読み込む。
-    """
     conn = get_daily_db_connection()
     c = conn.cursor()
     c.execute("""
@@ -665,12 +661,12 @@ def daily_report_pdf(report_id):
                lunch_menu, dinner_menu, breakfast_menu, content_json, status
         FROM daily_reports
         WHERE id=?
-    """,(report_id,))
+    """, (report_id,))
     row = c.fetchone()
     c.close()
     conn.close()
     if not row:
-        return "No report found",404
+        return "No report found", 404
 
     (report_date, user_name, staff_day, staff_night, staff_extra,
      lunch_menu, dinner_menu, breakfast_menu, content_json, status) = row
@@ -692,7 +688,6 @@ def daily_report_pdf(report_id):
         mgr_text = "確認済"
         mgr_style = "color:red; font-weight:bold;"
 
-    # HTMLソースを組み立て
     html_src = f"""
     <html>
     <head>
@@ -700,7 +695,7 @@ def daily_report_pdf(report_id):
       <style>
         @page {{ size:A4; margin:20mm; }}
         body {{
-          font-family: 'NotoSansJP', sans-serif;  /* ←ここを Roboto → NotoSansJP に変更 */
+          font-family: 'NotoSansJP', sans-serif;
           font-size: 12pt;
         }}
         .frame {{
@@ -720,74 +715,45 @@ def daily_report_pdf(report_id):
     <body>
       <h1 style="text-align:center;">業務日誌</h1>
       <p>日報ID: {report_id}</p>
-
       <div class="frame">
         <h2>日時・スタッフ名</h2>
         <p><strong>記録日:</strong> {mmdd_label}</p>
-    """
-
-    day_time = cdict.get("day_time","")
-    if staff_day:
-        html_src += f"<p><strong>日中スタッフ名:</strong> {staff_day}"
-        if day_time:
-            html_src += f" (勤務時間:{day_time})"
-        html_src += "</p>"
-
-    night_time = cdict.get("night_time","")
-    html_src += f"<p><strong>夜勤スタッフ名:</strong> {staff_night}"
-    if night_time:
-        html_src += f" (勤務時間:{night_time})"
-    html_src += "</p>"
-
-    extra_time = cdict.get("extra_time","")
-    if staff_extra:
-        html_src += f"<p><strong>追加スタッフ名:</strong> {staff_extra}"
-        if extra_time:
-            html_src += f" (勤務時間:{extra_time})"
-        html_src += "</p>"
-
-    html_src += "</div>"
-
-    html_src += """
+        <p><strong>日中スタッフ名:</strong> {staff_day}</p>
+        <p><strong>夜勤スタッフ名:</strong> {staff_night}</p>
+        <p><strong>追加スタッフ名:</strong> {staff_extra}</p>
+      </div>
       <div class="frame">
         <h2>食事の献立</h2>
-    """
-    if staff_day and lunch_menu:
-        html_src += f"<p><strong>昼食の献立:</strong> {lunch_menu}</p>"
-    html_src += f"<p><strong>夕食の献立:</strong> {dinner_menu}</p>"
-    html_src += f"<p><strong>朝食の献立:</strong> {breakfast_menu}</p>"
-    html_src += "</div>"
-
-    businessContent = cdict.get("businessContent","")
-    relayInfo = cdict.get("relayInfo","")
-    html_src += """
+        <p><strong>昼食の献立:</strong> {lunch_menu}</p>
+        <p><strong>夕食の献立:</strong> {dinner_menu}</p>
+        <p><strong>朝食の献立:</strong> {breakfast_menu}</p>
+      </div>
       <div class="frame">
         <h2>当日業務の報告</h2>
-    """
-    html_src += f"<p><strong>業務内容:</strong><br>「{businessContent}」</p>"
-    html_src += f"<p><strong>連絡・引継ぎ事項:</strong><br>「{relayInfo}」</p>"
-    html_src += "</div>"
-
-    html_src += f"""
+        <p><strong>業務内容:</strong><br>{cdict.get("businessContent", "")}</p>
+        <p><strong>連絡・引継ぎ事項:</strong><br>{cdict.get("relayInfo", "")}</p>
+      </div>
       <div class="frame">
         <h2>管理者確認</h2>
         <p><strong>管理者確認:</strong> <span style="{mgr_style}">{mgr_text}</span></p>
       </div>
-    """
-
-    html_src += """
     </body>
     </html>
     """
 
-    # ▼ styles.css を読み込むための準備
     base_dir = os.path.abspath(os.path.dirname(__file__))
-    pdf_css_path = os.path.join(base_dir, "static", "styles.css")
+    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
+    css_string = f"""
+    @font-face {{
+        font-family: 'NotoSansJP';
+        src: url('file://{fonts_dir}/NotoSansJP-Regular.ttf') format('truetype');
+    }}
+    body {{
+        font-family: 'NotoSansJP', sans-serif;
+    }}
+    """
 
-    # PDF生成
-    pdf = HTML(string=html_src, base_url=request.url_root).write_pdf(
-        stylesheets=[CSS(pdf_css_path)]
-    )
+    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
     resp.headers["Content-Disposition"] = f'inline; filename="DailyReport_{report_id}.pdf"'
@@ -1371,11 +1337,18 @@ def service_record_pdf(rec_id):
 
     # PDF生成(指定CSSの読み込み)
     base_dir = os.path.abspath(os.path.dirname(__file__))
-    pdf_css_path = os.path.join(base_dir, "static", "styles.css")
+    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
+    css_string = f"""
+    @font-face {{
+        font-family: 'NotoSansJP';
+        src: url('file://{fonts_dir}/NotoSansJP-Regular.ttf') format('truetype');
+    }}
+    body {{
+        font-family: 'NotoSansJP', sans-serif;
+    }}
+    """
 
-    pdf = HTML(string=html_src, base_url=request.url_root).write_pdf(
-        stylesheets=[CSS(pdf_css_path)]
-    )
+    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
     resp.headers["Content-Disposition"] = f'inline; filename="ServiceRecord_{rec_id}.pdf"'
