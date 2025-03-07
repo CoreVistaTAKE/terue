@@ -700,7 +700,7 @@ def daily_report_pdf(report_id):
       <style>
         @page {{ size:A4; margin:20mm; }}
         body {{
-          font-family: 'NotoSansJP', sans-serif; /* 例: styles.cssで@font-face登録済みフォント */
+          font-family: 'NotoSansJP', sans-serif;  /* ←ここを Roboto → NotoSansJP に変更 */
           font-size: 12pt;
         }}
         .frame {{
@@ -1260,7 +1260,7 @@ def service_record_pdf(rec_id):
   <style>
     @page {{ size:A4; margin:10mm; }}
     body {{
-      font-family: 'NotoSansJP', sans-serif; /* styles.cssで@font-face済みのフォント名 */
+      font-family: 'NotoSansJP', sans-serif;  /* ←ここを Roboto → NotoSansJP に変更 */
       font-size: 12pt;
       line-height: 1.4;
     }}
@@ -1276,7 +1276,6 @@ def service_record_pdf(rec_id):
   </style>
 </head>
 <body>
-
 <!-- (枠1) -->
 <p>利用者: {user_name}</p>
 <p>記録日: <strong>{display_date}</strong></p>
