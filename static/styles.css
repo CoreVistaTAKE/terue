@@ -7,7 +7,7 @@
     font-weight: normal;
     font-style: normal;
   }
-  
+
    @font-face {
     font-family: 'Font Awesome 5 Brands';
     font-weight: 400;
@@ -101,7 +101,7 @@
   
   /* ▼ bodyフォントを Roboto(例) にする場合: */
   body {
-    font-family: 'NotoSansJP', sans-serif;
+    font-family: "Noto Sans CJK JP", sans-serif;
     background: #f4f8fb;
     color: #333;
     padding-top: 80px;

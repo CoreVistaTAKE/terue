@@ -654,6 +654,12 @@ def show_daily_report(report_id):
 
 @app.route("/daily_report_pdf/<int:report_id>")
 def daily_report_pdf(report_id):
+    """
+    業務日誌PDF出力
+    Heroku にインストール済みの Noto Sans CJK JP を使うため、
+    @font-face は記述せず、HTML 内の CSS で "Noto Sans CJK JP" を指定します。
+    """
+    # 1) データベースから日報情報を取得
     conn = get_daily_db_connection()
     c = conn.cursor()
     c.execute("""
@@ -665,35 +671,41 @@ def daily_report_pdf(report_id):
     row = c.fetchone()
     c.close()
     conn.close()
+
     if not row:
         return "No report found", 404
 
     (report_date, user_name, staff_day, staff_night, staff_extra,
      lunch_menu, dinner_menu, breakfast_menu, content_json, status) = row
 
+    # 2) JSONのパース (業務内容等)
     cdict = {}
     try:
         cdict = json.loads(content_json or "{}")
     except:
         pass
 
+    # 3) 日付表示
     mmdd_label = report_date
     if re.match(r"^(\d{4})-(\d{2})-(\d{2})$", report_date):
         y, m, d = report_date.split("-")
         mmdd_label = f"{int(m)}月{int(d)}日"
 
+    # 4) 管理者確認テキスト
     mgr_text = "未完了"
     mgr_style = "color:gray;"
     if cdict.get("managerCheck") == "on" or status == "済":
         mgr_text = "確認済"
         mgr_style = "color:red; font-weight:bold;"
 
+    # 5) HTML 組み立て
     html_src = f"""
     <html>
     <head>
       <meta charset="UTF-8">
       <style>
         @page {{ size:A4; margin:20mm; }}
+        /* システムにインストールされている "Noto Sans CJK JP" を使用 */
         body {{
           font-family: "Noto Sans CJK JP", sans-serif;
           font-size: 12pt;
@@ -715,6 +727,7 @@ def daily_report_pdf(report_id):
     <body>
       <h1 style="text-align:center;">業務日誌</h1>
       <p>日報ID: {report_id}</p>
+
       <div class="frame">
         <h2>日時・スタッフ名</h2>
         <p><strong>記録日:</strong> {mmdd_label}</p>
@@ -722,38 +735,33 @@ def daily_report_pdf(report_id):
         <p><strong>夜勤スタッフ名:</strong> {staff_night}</p>
         <p><strong>追加スタッフ名:</strong> {staff_extra}</p>
       </div>
+
       <div class="frame">
         <h2>食事の献立</h2>
         <p><strong>昼食の献立:</strong> {lunch_menu}</p>
         <p><strong>夕食の献立:</strong> {dinner_menu}</p>
         <p><strong>朝食の献立:</strong> {breakfast_menu}</p>
       </div>
+
       <div class="frame">
         <h2>当日業務の報告</h2>
         <p><strong>業務内容:</strong><br>{cdict.get("businessContent", "")}</p>
         <p><strong>連絡・引継ぎ事項:</strong><br>{cdict.get("relayInfo", "")}</p>
       </div>
+
       <div class="frame">
         <h2>管理者確認</h2>
         <p><strong>管理者確認:</strong> <span style="{mgr_style}">{mgr_text}</span></p>
       </div>
+
     </body>
     </html>
     """
 
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
-    css_string = f"""
-    @font-face {{
-        font-family: 'NotoSansJP';
-        src: url('file://{fonts_dir}/NotoSansJP-Regular.ttf') format('truetype');
-    }}
-    body {{
-        font-family: 'NotoSansJP', sans-serif;
-    }}
-    """
+    # 6) WeasyPrint で PDF 作成 (Heroku システムフォントを使用するため、追加の @font-face なし)
+    pdf = HTML(string=html_src).write_pdf()
 
-    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
+    # 7) レスポンス返却
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
     resp.headers["Content-Disposition"] = f'inline; filename="DailyReport_{report_id}.pdf"'
@@ -1066,7 +1074,9 @@ def service_record_pdf(rec_id):
     """
     サービス提供記録PDFをA4一枚で印刷する。
     枠1～枠7の仕様に沿ってレイアウトを組み立てる。
-    フォントは styles.css で設定。
+
+    ※ Heroku にインストール済みの "Noto Sans CJK JP" フォントを使用。
+       @font-face は不要なので削除しています。
     """
     conn = get_daily_db_connection()
     c = conn.cursor()
@@ -1089,7 +1099,6 @@ def service_record_pdf(rec_id):
      c_json,
      st) = row
 
-    import json
     try:
         cdict = json.loads(c_json or "{}")
     except:
@@ -1103,7 +1112,7 @@ def service_record_pdf(rec_id):
         mgr_text  = "未完了"
         mgr_color = "black"
 
-    # user_name 取得 (management.db)
+    # user_name を management.db から取得 (例)
     user_name = f"利用者ID:{u_id}"
     try:
         conn_m = get_management_db_connection()
@@ -1218,13 +1227,14 @@ def service_record_pdf(rec_id):
         lunch_part += "</p>"
         lunch_part += f"<p><strong>日中の様子:</strong> {dayStatus}</p>"
 
-    # HTML組み立て
+    # HTML 組み立て
     html_src = f"""
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
     @page {{ size:A4; margin:10mm; }}
+    /* Heroku にインストールされている "Noto Sans CJK JP" を利用 */
     body {{
       font-family: "Noto Sans CJK JP", sans-serif;
       font-size: 12pt;
@@ -1295,8 +1305,8 @@ def service_record_pdf(rec_id):
 <hr/>
 
 <!-- (枠6) 利用者の支援詳細 -->
-<p><strong>利用者の支援詳細</strong><br>
-   利用者の様子: {userCondition}
+<p><strong>利用者の様子</strong><br>
+   {userCondition}
 </p>
 """
 
@@ -1335,20 +1345,9 @@ def service_record_pdf(rec_id):
 </html>
     """
 
-    # PDF生成(指定CSSの読み込み)
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
-    css_string = f"""
-    @font-face {{
-        font-family: 'NotoSansJP';
-        src: url('file://{fonts_dir}/NotoSansJP-Regular.ttf') format('truetype');
-    }}
-    body {{
-        font-family: 'NotoSansJP', sans-serif;
-    }}
-    """
+    # PDF生成 (Heroku システムフォントを使うため、@font-face は不要)
+    pdf = HTML(string=html_src).write_pdf()
 
-    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
     resp.headers["Content-Disposition"] = f'inline; filename="ServiceRecord_{rec_id}.pdf"'
