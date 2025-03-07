@@ -1,4 +1,15 @@
 libpcre2-16-0
+libxrender1
+libqt5gui5
+libqt5core5a
+libqt5widgets5
+libqt5printsupport5
+libfontconfig1
+libfreetype6
+libx11-6
+libxext6
+libxcomposite1
+libxdamage1
 libpcre2-8-0
 libpcre2-dev
 wkhtmltopdf
