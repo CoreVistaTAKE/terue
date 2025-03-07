@@ -655,9 +655,7 @@ def show_daily_report(report_id):
 @app.route("/daily_report_pdf/<int:report_id>")
 def daily_report_pdf(report_id):
     """
-    業務日誌PDF出力
-    Heroku にインストール済みの Noto Sans CJK JP を使うため、
-    @font-face は記述せず、HTML 内の CSS で "Noto Sans CJK JP" を指定します。
+    業務日誌PDF出力 (ローカルの NotoSansJP-Regular.ttf を埋め込み)
     """
     # 1) データベースから日報情報を取得
     conn = get_daily_db_connection()
@@ -685,7 +683,7 @@ def daily_report_pdf(report_id):
     except:
         pass
 
-    # 3) 日付表示
+    # 3) 日付表示(例: yyyy-mm-dd → M月D日)
     mmdd_label = report_date
     if re.match(r"^(\d{4})-(\d{2})-(\d{2})$", report_date):
         y, m, d = report_date.split("-")
@@ -698,16 +696,16 @@ def daily_report_pdf(report_id):
         mgr_text = "確認済"
         mgr_style = "color:red; font-weight:bold;"
 
-    # 5) HTML 組み立て
+    # 5) HTML 組み立て (業務日誌レイアウト)
     html_src = f"""
     <html>
     <head>
       <meta charset="UTF-8">
       <style>
         @page {{ size:A4; margin:20mm; }}
-        /* システムにインストールされている "Noto Sans CJK JP" を使用 */
+        /* body に "NotoSansJP" を適用 (後で @font-face で読み込む) */
         body {{
-          font-family: "Noto Sans CJK JP", sans-serif;
+          font-family: "NotoSansJP", sans-serif;
           font-size: 12pt;
         }}
         .frame {{
@@ -758,8 +756,23 @@ def daily_report_pdf(report_id):
     </html>
     """
 
-    # 6) WeasyPrint で PDF 作成 (Heroku システムフォントを使用するため、追加の @font-face なし)
-    pdf = HTML(string=html_src).write_pdf()
+    # 6) WeasyPrint で PDF 作成
+    #    ローカルフォント "NotoSansJP-Regular.ttf" を埋め込む
+    #    (例: static/fonts/NotoSansJP-Regular.ttf に配置済み想定)
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
+    fonts_dir_slashed = fonts_dir.replace('\\', '/')
+    css_string = f"""
+    @font-face {{
+        font-family: 'NotoSansJP';
+        src: url('file://{fonts_dir_slashed}/NotoSansJP-Regular.ttf') format('truetype');
+    }}
+    body {{
+        font-family: 'NotoSansJP', sans-serif;
+    }}
+    """
+
+    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
 
     # 7) レスポンス返却
     resp = make_response(pdf)
@@ -1075,9 +1088,12 @@ def service_record_pdf(rec_id):
     サービス提供記録PDFをA4一枚で印刷する。
     枠1～枠7の仕様に沿ってレイアウトを組み立てる。
 
-    ※ Heroku にインストール済みの "Noto Sans CJK JP" フォントを使用。
-       @font-face は不要なので削除しています。
+    - フォントは「NotoSansJP」をローカルに置いて、
+      @font-face で埋め込む（WeasyPrint 用）。
+    - static/fonts/NotoSansJP-Regular.ttf が存在する前提。
     """
+
+    # --- 1) DBからサービス提供記録を取得 ---
     conn = get_daily_db_connection()
     c = conn.cursor()
     c.execute("""
@@ -1099,11 +1115,13 @@ def service_record_pdf(rec_id):
      c_json,
      st) = row
 
+    # JSON展開
     try:
         cdict = json.loads(c_json or "{}")
     except:
         cdict = {}
 
+    # 管理者確認
     mgr_val = cdict.get("managerCheck","off")
     if mgr_val=="on" or st=="済":
         mgr_text  = "確認済"
@@ -1112,7 +1130,7 @@ def service_record_pdf(rec_id):
         mgr_text  = "未完了"
         mgr_color = "black"
 
-    # user_name を management.db から取得 (例)
+    # --- 2) ユーザ名を management.db から取得 ---
     user_name = f"利用者ID:{u_id}"
     try:
         conn_m = get_management_db_connection()
@@ -1126,6 +1144,7 @@ def service_record_pdf(rec_id):
     except:
         pass
 
+    # --- 3) ユーティリティ関数: 帰宅/起床時のラベル ---
     def getHomeStateLabel(val):
         if val=="1": return "特に気になることはありません。"
         if val=="2": return "少し疲れた様子"
@@ -1141,6 +1160,7 @@ def service_record_pdf(rec_id):
         if val=="5": return "その他"
         return val or ""
 
+    # --- 4) is_daytime 等、JSONから各値を取り出し ---
     is_daytime = True if s_day else False
 
     dayMealScore     = cdict.get("dayMealScore","")
@@ -1201,16 +1221,17 @@ def service_record_pdf(rec_id):
     homeLabel = getHomeStateLabel(homeState)
     wakeLabel = getWakeStateLabel(wakeState)
 
-    # 短期目標コメント
+    # 短期目標コメントHTML
     stc_html = ""
     if isinstance(shortTermComments, dict):
+        # キーが "1","2",... の想定
         sorted_keys = sorted(shortTermComments.keys(), key=lambda x:int(x) if x.isdigit() else 9999)
         for k in sorted_keys:
             v = shortTermComments[k]
             if v:
                 stc_html += f"短期目標{k}に対するコメント: {v}<br>"
 
-    # 日付(yyyy-mm-dd → M月D日)
+    # 日付を 「M月D日」表記に変換
     display_date = r_date
     try:
         y,m,d = r_date.split("-")
@@ -1227,16 +1248,15 @@ def service_record_pdf(rec_id):
         lunch_part += "</p>"
         lunch_part += f"<p><strong>日中の様子:</strong> {dayStatus}</p>"
 
-    # HTML 組み立て
+    # --- 5) HTMLを組み立て ---
     html_src = f"""
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
     @page {{ size:A4; margin:10mm; }}
-    /* Heroku にインストールされている "Noto Sans CJK JP" を利用 */
     body {{
-      font-family: "Noto Sans CJK JP", sans-serif;
+      font-family: "NotoSansJP", sans-serif;
       font-size: 12pt;
       line-height: 1.4;
     }}
@@ -1305,12 +1325,12 @@ def service_record_pdf(rec_id):
 <hr/>
 
 <!-- (枠6) 利用者の支援詳細 -->
-<p><strong>利用者の様子</strong><br>
-   {userCondition}
+<p><strong>利用者の支援詳細</strong><br>
+   利用者の様子: {userCondition}
 </p>
 """
 
-    # 介助項目
+    # 介助項目があれば表示
     assist_html = ""
     if foodAssistChecked=="on":
         assist_html += f"・食事介助: {foodAssistDetail}<br>"
@@ -1345,12 +1365,27 @@ def service_record_pdf(rec_id):
 </html>
     """
 
-    # PDF生成 (Heroku システムフォントを使うため、@font-face は不要)
-    pdf = HTML(string=html_src).write_pdf()
+    # --- 6) WeasyPrint用: ローカルフォント "NotoSansJP-Regular.ttf" を埋め込む CSS を作成 ---
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
+    fonts_dir_slashed = fonts_dir.replace('\\', '/')
+    css_string = f"""
+    @font-face {{
+        font-family: 'NotoSansJP';
+        src: url('file://{fonts_dir_slashed}/NotoSansJP-Regular.ttf') format('truetype');
+    }}
+    body {{
+        font-family: 'NotoSansJP', sans-serif;
+    }}
+    """
 
+    # --- 7) PDF生成 ---
+    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
+
+    # --- 8) PDFをレスポンスとして返却 ---
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
-    resp.headers["Content-Disposition"] = f'inline; filename="ServiceRecord_{rec_id}.pdf"'
+    resp.headers["Content-Disposition"] = f'inline; filename=\"ServiceRecord_{rec_id}.pdf\"'
     return resp
 
 ########################################

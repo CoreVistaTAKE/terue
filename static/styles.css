@@ -101,7 +101,7 @@
   
   /* ▼ bodyフォントを Roboto(例) にする場合: */
   body {
-    font-family: "Noto Sans CJK JP", sans-serif;
+    font-family: "NotoSansJP", sans-serif;
     background: #f4f8fb;
     color: #333;
     padding-top: 80px;
