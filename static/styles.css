@@ -9,12 +9,11 @@
   }
   
   @font-face {
-    font-family: 'NotoSansJP';
+    font-family: 'NotoSansJP-Bold';
     font-style: normal;
     font-weight: 700;
     src: url("/static/fonts/NotoSansJP-Bold.ttf") format("truetype");
   }
-  
    @font-face {
     font-family: 'Font Awesome 5 Brands';
     font-weight: 400;
@@ -22,7 +21,6 @@
     src: url("/static/fonts/fa-brands-400.woff2") format("woff2"),
          url("/static/fonts/fa-brands-400.ttf") format("truetype");
   }
-  
   @font-face {
     font-family: 'Font Awesome 5 Regular';
     font-weight: 400;
@@ -30,7 +28,6 @@
     src: url("/static/fonts/fa-regular-400.woff2") format("woff2"),
          url("/static/fonts/fa-regular-400.ttf") format("truetype");
   }
-  
   @font-face {
     font-family: 'Font Awesome 5 Solid';
     font-weight: 900;
