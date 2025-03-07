@@ -3,9 +3,11 @@
    ========================================= */
    @font-face {
     font-family: 'NotoSansJP';
-    src: local('Noto Sans CJK JP'), local('Noto Sans JP');
+    src: url("/static/fonts/NotoSansJP-Regular.ttf") format("truetype");
     font-weight: normal;
-}
+    font-style: normal;
+  }
+  
    @font-face {
     font-family: 'Font Awesome 5 Brands';
     font-weight: 400;

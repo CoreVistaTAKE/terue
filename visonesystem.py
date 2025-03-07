@@ -695,7 +695,7 @@ def daily_report_pdf(report_id):
       <style>
         @page {{ size:A4; margin:20mm; }}
         body {{
-          font-family: 'NotoSansJP', sans-serif;
+          font-family: "Noto Sans CJK JP", sans-serif;
           font-size: 12pt;
         }}
         .frame {{
@@ -1226,7 +1226,7 @@ def service_record_pdf(rec_id):
   <style>
     @page {{ size:A4; margin:10mm; }}
     body {{
-      font-family: 'NotoSansJP', sans-serif;  /* ←ここを Roboto → NotoSansJP に変更 */
+      font-family: "Noto Sans CJK JP", sans-serif;
       font-size: 12pt;
       line-height: 1.4;
     }}
