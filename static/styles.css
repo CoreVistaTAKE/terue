@@ -3,17 +3,9 @@
    ========================================= */
    @font-face {
     font-family: 'NotoSansJP';
-    font-style: normal;
-    font-weight: 400;
-    src: url("/static/fonts/NotoSansJP-Regular.ttf") format("truetype");
-  }
-  
-  @font-face {
-    font-family: 'NotoSansJP-Bold';
-    font-style: normal;
-    font-weight: 700;
-    src: url("/static/fonts/NotoSansJP-Bold.ttf") format("truetype");
-  }
+    src: local('Noto Sans CJK JP'), local('Noto Sans JP');
+    font-weight: normal;
+}
    @font-face {
     font-family: 'Font Awesome 5 Brands';
     font-weight: 400;
@@ -107,7 +99,7 @@
   
   /* ▼ bodyフォントを Roboto(例) にする場合: */
   body {
-    font-family: 'NotoSansJP', Arial, sans-serif;
+    font-family: 'NotoSansJP', sans-serif;
     background: #f4f8fb;
     color: #333;
     padding-top: 80px;
