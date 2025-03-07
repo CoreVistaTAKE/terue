@@ -1,590 +1,649 @@
-/********************************************
- * Block #A: リセット & グローバル
-********************************************/
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f8fb;
-  color: #333;
-  padding-top: 80px;
-  font-size: 0.9rem;
-}
-
-/********************************************
- * Block #B: ヘッダー & フッター
-********************************************/
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: #e0efff;
-  border-bottom: 1px solid #ccc;
-  display: flex;
-  align-items: center;
-  padding: 10px 20px;
-  z-index: 9999;
-}
-.header-icon {
-  height: 50px;
-  width: auto;
-}
-.header-center h1 {
-  font-size: 1.5rem;
-  color: #004080;
-}
-.subtitle {
-  font-size: 0.9rem;
-  color: #004080;
-}
-.footer {
-  background: #e0efff;
-  text-align: center;
-  padding: 10px;
-  font-size: 0.8rem;
-  margin-top: 20px;
-}
-
-/********************************************
- * Block #C: レイアウト (左右スクロール)
-********************************************/
-.container {
-  display: flex;
-  margin-top: 10px;
-  height: calc(100vh - 140px);
-  background: #e3f2fd;
-  border: 2px solid #0080c0;
-  padding: 10px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.sidebar {
-  width: 280px;
-  min-width: 280px;
-  max-width: 280px;
-  background: #fff;
-  border-right: 1px solid #ccc;
-  padding: 20px;
-  overflow-y: auto;
-}
-.main-content {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-}
-
-/********************************************
- * Block #D: メニュー関連
-********************************************/
-
-#left-menu ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-#left-menu li {
-  position: relative;
-  margin-bottom: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* ▼全てのメニュー項目でマウスオーバー時に変化 */
-#left-menu li:hover {
-  filter: brightness(0.95);
-}
-
-/* ▼ 選択時スタイル */
-li.selected {
-  font-weight: bold;
-  color: #c00000;
-}
-
-/********************************************
- * ▼ 運営サポート(黄系 #CCBFAF)
-********************************************/
-/* 大分類(基準): #CCBFAF + color #FFFFFF */
-.cat-support {
-  background-color: #CCBFAF;
-  color: #FFFFFF;
-  border: 2px solid #8E836E; /* やや濃い枠線 */
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-.cat-support > .menu-title {
-  display: block;
-  padding: 0;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-/* 中分類: #DED4C9, color #FFFFFF + 境界線 #643905 */
-.cat-support ul.sub-menu > li > .sub-title {
-  background-color: #DED4C9; 
-  color: #0f5a60;
-  display: inline-block;
-  padding: 4px 6px;
-  border-radius: 3px;
-  margin-bottom: 4px;
-}
-
-/* 小分類: #EBE5DE, color #4A4A4A */
-.cat-support ul.sub-menu ul.item-menu > li > .sub-title {
-  background-color: #EBE5DE;
-  color: #0f5a60;
-  display: inline-block;
-  padding: 4px 6px;
-  border-radius: 3px;
-  margin-bottom: 4px;
-  /* 小分類は文字境界線なし(指示通り color:#4A4A4A) */
-}
-
-/* 項目: #F5F2EF, color #333333 */
-.cat-support ul.sub-menu ul.item-menu li[data-item] {
-  background-color: #F5F2EF;
-  color: #333333;
-  margin: 3px 0;
-  padding: 4px;
-}
-
-
-/********************************************
- * ▼ 日々・都度の入力(緑系 #7CCA45)
-********************************************/
-/* 大分類(基準): #7CCA45 + color #FFFFFF */
-.cat-daily {
-  background-color: #7CCA45;
-  color: #FFFFFF;
-  border: 2px solid #469C14; /* 濃い緑 */
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-.cat-daily > .menu-title {
-  display: block;
-  padding: 0;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-/* 中分類: #9DD978, color #FFFFFF + 境界線 #03410d */
-.cat-daily ul.sub-menu > li > .sub-title {
-  background-color: #E3F6D4;
-  color: #333333;
-  display: inline-block;
-  padding: 4px 6px;
-  border-radius: 3px;
-  margin-bottom: 4px;
-}
-
-/* 小分類: #C0E8A5, color #4A4A4A */
-.cat-daily ul.sub-menu ul.item-menu > li > .sub-title {
-  background-color: #E3F6D4;
-  color: #333333;
-  display: inline-block;
-  padding: 4px 6px;
-  border-radius: 3px;
-  margin-bottom: 4px;
-}
-
-/* 項目: #E3F6D4, color #333333 */
-.cat-daily ul.sub-menu ul.item-menu li[data-item] {
-  background-color: #E3F6D4;
-  color: #333333;
-  margin: 3px 0;
-  padding: 4px;
-}
-
-
-/********************************************
- * ▼ 運営書類一覧と保存(青系 #6BA5BE)
-********************************************/
-/* 大分類(基準): #6BA5BE + color #FFFFFF */
-.cat-documents {
-  background-color: #6BA5BE;
-  color: #FFFFFF;
-  border: 2px solid #3E6A7B; /* 濃い青 */
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-.cat-documents > .menu-title {
-  display: block;
-  padding: 0;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-/* 中分類: #8CBCD0, color #FFFFFF + 境界線 #084e6d */
-.cat-documents ul.sub-menu > li > .sub-title {
-  background-color: #D7E6EE;
-  color: #084e6d;
-  display: inline-block;
-  padding: 4px 6px;
-  border-radius: 3px;
-  margin-bottom: 4px;
-}
-
-/* 小分類: #B2D1DF, color #4A4A4A */
-.cat-documents ul.sub-menu ul.item-menu > li > .sub-title {
-  background-color: #D7E6EE;
-  color: #084e6d;
-  display: inline-block;
-  padding: 4px 6px;
-  border-radius: 3px;
-  margin-bottom: 4px;
-}
-
-/* 項目: #D7E6EE, color #333333 */
-.cat-documents ul.sub-menu ul.item-menu li[data-item] {
-  background-color: #D7E6EE;
-  color: #333333;
-  margin: 3px 0;
-  padding: 4px;
-}
-
-
-/********************************************
- * ▼ サブメニュー余白 & 隠しクラス
-********************************************/
-.sub-menu,
-.item-menu {
-  margin-left: 20px;
-  padding-left: 10px;
-  margin-top: 10px;
-}
-
-.hidden {
-  display: none;
-}
-/********************************************
- * Block #E: 詳細エリア (detail-section等)
-********************************************/
-.detail-section {
-  border: 2px solid #005b9c;
-  background: #f8fafe;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  padding: 15px;
-}
-.detail-header {
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 8px;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-/********************************************
- * Block #F: カレンダー表示
-********************************************/
-.calendar-section {
-  border: 2px solid #005b9c;
-  background: #f8fafe;
-  padding: 10px;
-  margin-bottom: 20px;
-  border-radius: 4px;
-}
-.calendar-legend {
-  display: flex;
-  gap: 10px;
-  margin: 0 0 10px 0;
-  align-items: center;
-}
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #ccc;
-  margin-bottom: 5px;
-  padding: 5px 10px;
-}
-.big-calendar {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-.big-calendar th,
-.big-calendar td {
-  border: 1px solid #ccc;
-  padding: 3px;
-  height: 80px;
-  vertical-align: top;
-  position: relative;
-  overflow: hidden;
-}
-.calendar-date {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-weight: bold;
-}
-.calendar-cell {
-  cursor: pointer;
-}
-.small-calendar-font {
-  font-size: 0.7rem;
-}
-.circle {
-  margin-right: 2px;
-}
-.circle-green { color: green; }
-.circle-red   { color: red; }
-.circle-yellow{ color: #c7c700; }
-.blinking-red {
-  animation: blinkingText 1s infinite;
-  color: red;
-}
-@keyframes blinkingText {
-  0%   { opacity: 1; }
-  50%  { opacity: 0; }
-  100% { opacity: 1; }
-}
-.nav-button {
-  background: #ccc;
-  border: none;
-  padding: 4px 8px;
-  cursor: pointer;
-  border-radius: 3px;
-  font-size: 0.9rem;
-}
-
-/********************************************
- * Block #G: 今月の予定一覧 (schedule-list)
-********************************************/
-.schedule-list {
-  border: 2px solid #005b9c;
-  background: #f8fafe;
-  padding: 10px;
-  margin-bottom: 20px;
-  border-radius: 4px;
-}
-.month-schedule-container {
-  display: flex;
-  width: 100%;
-}
-.month-schedule-col {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  width: 50%;
-  max-width: 50%;
-}
-.month-schedule-col li {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 3px 0;
-  cursor: pointer;
-}
-.month-schedule-col li:hover {
-  background: #eef5ff;
-}
-.empty-slot {
-  color: #ccc;
-  cursor: default;
-}
-
-/********************************************
- * Block #H: モーダル関連
-********************************************/
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 99999;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4);
-}
-.modal-content {
-  background: #fff;
-  margin: 5% auto;
-  width: 80%;
-  max-width: 900px;
-  padding: 20px;
-  position: relative;
-  max-height: 80%;
-  overflow-y: auto;
-  border-radius: 6px;
-}
-.modal-close {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-
-/********************************************
- * Block #I: イベント一覧 (day-event-item 等)
-********************************************/
-.day-event-item {
-  margin: 5px 0;
-}
-.detail-btn {
-  margin-left: 10px;
-  font-size: 0.8rem;
-}
-
-/********************************************
- * Block #J: 汎用ボタン
-********************************************/
-.green-btn {
-  background: #00ba00;
-  color: #fff;
-  border: none;
-  padding: 5px 8px;
-  cursor: pointer;
-  border-radius: 3px;
-}
-.red-btn {
-  background: #ff4a4a;
-  color: #fff;
-  border: none;
-  padding: 5px 8px;
-  cursor: pointer;
-  border-radius: 3px;
-}
-
-/********************************************
- * Block #K: レスポンシブ対応
-********************************************/
-@media screen and (max-width:768px) {
+/* =========================================
+   Block #0: Webフォント読み込み (@font-face)
+   ========================================= */
+   @font-face {
+    font-family: 'Font Awesome 5 Brands';
+    font-weight: 400;
+    font-style: normal;
+    src: url("/static/fonts/fa-brands-400.woff2") format("woff2"),
+         url("/static/fonts/fa-brands-400.ttf") format("truetype");
+  }
+  
+  @font-face {
+    font-family: 'Font Awesome 5 Regular';
+    font-weight: 400;
+    font-style: normal;
+    src: url("/static/fonts/fa-regular-400.woff2") format("woff2"),
+         url("/static/fonts/fa-regular-400.ttf") format("truetype");
+  }
+  
+  @font-face {
+    font-family: 'Font Awesome 5 Solid';
+    font-weight: 900;
+    font-style: normal;
+    src: url("/static/fonts/fa-solid-900.woff2") format("woff2"),
+         url("/static/fonts/fa-solid-900.ttf") format("truetype");
+  }
+  
+  @font-face {
+    font-family: 'Font Awesome 5 v4compatibility';
+    font-weight: 400;
+    font-style: normal;
+    src: url("/static/fonts/fa-v4compatibility.woff2") format("woff2"),
+         url("/static/fonts/fa-v4compatibility.ttf") format("truetype");
+  }
+  
+  /* 
+    Inter (例: regular=400, semibold=600)
+  */
+  @font-face {
+    font-family: 'Inter';
+    font-weight: 400;
+    font-style: normal;
+    src: url("/static/fonts/inter-v18-latin-regular.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-weight: 600;
+    font-style: normal;
+    src: url("/static/fonts/inter-v18-latin-600.woff2") format("woff2");
+  }
+  
+  /* 
+    Merriweather (例: regular=400, bold=700)
+  */
+  @font-face {
+    font-family: 'Merriweather';
+    font-weight: 400;
+    font-style: normal;
+    src: url("/static/fonts/merriweather-v30-latin-regular.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: 'Merriweather';
+    font-weight: 700;
+    font-style: normal;
+    src: url("/static/fonts/merriweather-v30-latin-700.woff2") format("woff2");
+  }
+  
+  /* 
+    Roboto (例: regular=400, medium=500)
+  */
+  @font-face {
+    font-family: 'Roboto';
+    font-weight: 400;
+    font-style: normal;
+    src: url("/static/fonts/roboto-v32-latin-regular.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: 'Roboto';
+    font-weight: 500;
+    font-style: normal;
+    src: url("/static/fonts/roboto-v32-latin-500.woff2") format("woff2");
+  }
+  
+  /* =========================================
+     (ここから既存のCSS)
+     ========================================= */
+  
+  /********************************************
+   * Block #A: リセット & グローバル
+  ********************************************/
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* ▼ bodyフォントを Roboto(例) にする場合: */
+  body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background: #f4f8fb;
+    color: #333;
+    padding-top: 80px;
+    font-size: 0.9rem;
+  }
+  
+  /********************************************
+   * Block #B: ヘッダー & フッター
+  ********************************************/
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #e0efff;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    z-index: 9999;
+  }
+  .header-icon {
+    height: 50px;
+    width: auto;
+  }
+  .header-center h1 {
+    font-size: 1.5rem;
+    color: #004080;
+  }
+  .subtitle {
+    font-size: 0.9rem;
+    color: #004080;
+  }
+  .footer {
+    background: #e0efff;
+    text-align: center;
+    padding: 10px;
+    font-size: 0.8rem;
+    margin-top: 20px;
+  }
+  
+  /********************************************
+   * Block #C: レイアウト (左右スクロール)
+  ********************************************/
   .container {
-    flex-direction: column;
-    height: auto;
-    overflow: visible;
+    display: flex;
+    margin-top: 10px;
+    height: calc(100vh - 140px);
+    background: #e3f2fd;
+    border: 2px solid #0080c0;
+    padding: 10px;
+    border-radius: 8px;
+    overflow: hidden;
   }
   .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #ccc;
-    max-height: 200px; /* メニュー多い場合にスクロール */
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    background: #fff;
+    border-right: 1px solid #ccc;
+    padding: 20px;
     overflow-y: auto;
   }
   .main-content {
-    width: 100%;
-    max-height: calc(100vh - 340px);
+    flex: 1;
+    padding: 10px;
     overflow-y: auto;
   }
-}
-
-/********************************************
- * Block #L: レポートフォーム等 (input/textarea)
-********************************************/
-input[type="text"],
-input[type="date"],
-input[type="number"],
-textarea {
-  background: #fff;
-  border: 1px solid #999;
-  border-radius: 4px;
-  padding: 4px;
-  font-size: 0.9rem;
-  margin: 2px 0;
-}
-.report-label {
-  display: inline-block;
-  width: 140px;
-  font-weight: bold;
-  text-align: right;
-  margin-right: 8px;
-}
-textarea::placeholder {
-  color: #999;
-  font-size: 0.9rem;
-}
-.select-small {
-  width: 60px;
-}
-.select-medium {
-  width: 120px;
-}
-
-/********************************************
- * Block #M: 研修・訓練アイテム一覧
-********************************************/
-.training-item-box {
-  border: 1px solid #ccc;
-  background: #fefefe;
-  margin: 10px 0;
-  padding: 10px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-.training-item-box:hover {
-  background: #e8f4ff;
-}
-.training-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.training-item-title {
-  font-weight: bold;
-  font-size: 1rem;
-}
-.status.incomplete {
-  color: red;
-}
-.status.complete {
-  color: green;
-}
-.red-text {
-  color: red;
-}
-
-/********************************************
- * Block #N: 予定日入力強調
-********************************************/
-.planned-date-label {
-  font-weight: bold;
-  color: #e30000;
-  font-size: 1rem;
-}
-.planned-date-input {
-  border: 2px solid #e30000;
-  background-color: #fff2f2;
-  padding: 4px;
-  font-size: 1rem;
-  margin-top: 5px;
-}
-
-/********************************************
- * Block #O: フィールドセット(折り畳み)
-********************************************/
-.collapsible {
-  border: 1px solid #aaa;
-  margin-bottom: 15px;
-  position: relative;
-}
-.collapsible legend {
-  cursor: pointer;
-  font-weight: bold;
-  margin-left: 8px;
-}
-.collapsible .fold-icon {
-  margin-left: 4px;
-}
-.collapsible.open .fieldset-content {
-  display: block;
-}
-.collapsible.closed .fieldset-content {
-  display: none;
-}
-.label-right {
-  display: inline-block;
-  width: 120px;
-  text-align: right;
-  margin-right: 6px;
-  font-weight: bold;
-}
-.form-row {
-  margin: 4px 0;
-}
-legend {
-  font-weight: bold;
-  margin-left: 10px;
-}
+  
+  /********************************************
+   * Block #D: メニュー関連
+  ********************************************/
+  #left-menu ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  #left-menu li {
+    position: relative;
+    margin-bottom: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #left-menu li:hover {
+    filter: brightness(0.95);
+  }
+  li.selected {
+    font-weight: bold;
+    color: #c00000;
+  }
+  
+  /********************************************
+   * ▼ 運営サポート(黄系 #CCBFAF)
+  ********************************************/
+  .cat-support {
+    background-color: #CCBFAF;
+    color: #FFFFFF;
+    border: 2px solid #8E836E;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .cat-support > .menu-title {
+    display: block;
+    padding: 0;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  .cat-support ul.sub-menu > li > .sub-title {
+    background-color: #DED4C9; 
+    color: #0f5a60;
+    display: inline-block;
+    padding: 4px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .cat-support ul.sub-menu ul.item-menu > li > .sub-title {
+    background-color: #EBE5DE;
+    color: #0f5a60;
+    display: inline-block;
+    padding: 4px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .cat-support ul.sub-menu ul.item-menu li[data-item] {
+    background-color: #F5F2EF;
+    color: #333333;
+    margin: 3px 0;
+    padding: 4px;
+  }
+  
+  /********************************************
+   * ▼ 日々・都度の入力(緑系 #7CCA45)
+  ********************************************/
+  .cat-daily {
+    background-color: #7CCA45;
+    color: #FFFFFF;
+    border: 2px solid #469C14;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .cat-daily > .menu-title {
+    display: block;
+    padding: 0;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  .cat-daily ul.sub-menu > li > .sub-title {
+    background-color: #E3F6D4;
+    color: #333333;
+    display: inline-block;
+    padding: 4px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .cat-daily ul.sub-menu ul.item-menu > li > .sub-title {
+    background-color: #E3F6D4;
+    color: #333333;
+    display: inline-block;
+    padding: 4px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .cat-daily ul.sub-menu ul.item-menu li[data-item] {
+    background-color: #E3F6D4;
+    color: #333333;
+    margin: 3px 0;
+    padding: 4px;
+  }
+  
+  /********************************************
+   * ▼ 運営書類一覧と保存(青系 #6BA5BE)
+  ********************************************/
+  .cat-documents {
+    background-color: #6BA5BE;
+    color: #FFFFFF;
+    border: 2px solid #3E6A7B;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .cat-documents > .menu-title {
+    display: block;
+    padding: 0;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  .cat-documents ul.sub-menu > li > .sub-title {
+    background-color: #D7E6EE;
+    color: #084e6d;
+    display: inline-block;
+    padding: 4px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .cat-documents ul.sub-menu ul.item-menu > li > .sub-title {
+    background-color: #D7E6EE;
+    color: #084e6d;
+    display: inline-block;
+    padding: 4px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .cat-documents ul.sub-menu ul.item-menu li[data-item] {
+    background-color: #D7E6EE;
+    color: #333333;
+    margin: 3px 0;
+    padding: 4px;
+  }
+  
+  /********************************************
+   * ▼ サブメニュー余白 & 隠しクラス
+  ********************************************/
+  .sub-menu,
+  .item-menu {
+    margin-left: 20px;
+    padding-left: 10px;
+    margin-top: 10px;
+  }
+  .hidden {
+    display: none;
+  }
+  
+  /********************************************
+   * Block #E: 詳細エリア (detail-section等)
+  ********************************************/
+  .detail-section {
+    border: 2px solid #005b9c;
+    background: #f8fafe;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    padding: 15px;
+  }
+  .detail-header {
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  /********************************************
+   * Block #F: カレンダー表示
+  ********************************************/
+  .calendar-section {
+    border: 2px solid #005b9c;
+    background: #f8fafe;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  .calendar-legend {
+    display: flex;
+    gap: 10px;
+    margin: 0 0 10px 0;
+    align-items: center;
+  }
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #ccc;
+    margin-bottom: 5px;
+    padding: 5px 10px;
+  }
+  .big-calendar {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .big-calendar th,
+  .big-calendar td {
+    border: 1px solid #ccc;
+    padding: 3px;
+    height: 80px;
+    vertical-align: top;
+    position: relative;
+    overflow: hidden;
+  }
+  .calendar-date {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-weight: bold;
+  }
+  .calendar-cell {
+    cursor: pointer;
+  }
+  .small-calendar-font {
+    font-size: 0.7rem;
+  }
+  .circle {
+    margin-right: 2px;
+  }
+  .circle-green { color: green; }
+  .circle-red   { color: red; }
+  .circle-yellow{ color: #c7c700; }
+  .blinking-red {
+    animation: blinkingText 1s infinite;
+    color: red;
+  }
+  @keyframes blinkingText {
+    0%   { opacity: 1; }
+    50%  { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  .nav-button {
+    background: #ccc;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 0.9rem;
+  }
+  
+  /********************************************
+   * Block #G: 今月の予定一覧 (schedule-list)
+  ********************************************/
+  .schedule-list {
+    border: 2px solid #005b9c;
+    background: #f8fafe;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  .month-schedule-container {
+    display: flex;
+    width: 100%;
+  }
+  .month-schedule-col {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 50%;
+    max-width: 50%;
+  }
+  .month-schedule-col li {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 3px 0;
+    cursor: pointer;
+  }
+  .month-schedule-col li:hover {
+    background: #eef5ff;
+  }
+  .empty-slot {
+    color: #ccc;
+    cursor: default;
+  }
+  
+  /********************************************
+   * Block #H: モーダル関連
+  ********************************************/
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+  }
+  .modal-content {
+    background: #fff;
+    margin: 5% auto;
+    width: 80%;
+    max-width: 900px;
+    padding: 20px;
+    position: relative;
+    max-height: 80%;
+    overflow-y: auto;
+    border-radius: 6px;
+  }
+  .modal-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+  
+  /********************************************
+   * Block #I: イベント一覧 (day-event-item 等)
+  ********************************************/
+  .day-event-item {
+    margin: 5px 0;
+  }
+  .detail-btn {
+    margin-left: 10px;
+    font-size: 0.8rem;
+  }
+  
+  /********************************************
+   * Block #J: 汎用ボタン
+  ********************************************/
+  .green-btn {
+    background: #00ba00;
+    color: #fff;
+    border: none;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  .red-btn {
+    background: #ff4a4a;
+    color: #fff;
+    border: none;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  
+  /********************************************
+   * Block #K: レスポンシブ対応
+  ********************************************/
+  @media screen and (max-width:768px) {
+    .container {
+      flex-direction: column;
+      height: auto;
+      overflow: visible;
+    }
+    .sidebar {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .main-content {
+      width: 100%;
+      max-height: calc(100vh - 340px);
+      overflow-y: auto;
+    }
+  }
+  
+  /********************************************
+   * Block #L: レポートフォーム等 (input/textarea)
+  ********************************************/
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  textarea {
+    background: #fff;
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 0.9rem;
+    margin: 2px 0;
+  }
+  .report-label {
+    display: inline-block;
+    width: 140px;
+    font-weight: bold;
+    text-align: right;
+    margin-right: 8px;
+  }
+  textarea::placeholder {
+    color: #999;
+    font-size: 0.9rem;
+  }
+  .select-small {
+    width: 60px;
+  }
+  .select-medium {
+    width: 120px;
+  }
+  
+  /********************************************
+   * Block #M: 研修・訓練アイテム一覧
+  ********************************************/
+  .training-item-box {
+    border: 1px solid #ccc;
+    background: #fefefe;
+    margin: 10px 0;
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .training-item-box:hover {
+    background: #e8f4ff;
+  }
+  .training-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .training-item-title {
+    font-weight: bold;
+    font-size: 1rem;
+  }
+  .status.incomplete {
+    color: red;
+  }
+  .status.complete {
+    color: green;
+  }
+  .red-text {
+    color: red;
+  }
+  
+  /********************************************
+   * Block #N: 予定日入力強調
+  ********************************************/
+  .planned-date-label {
+    font-weight: bold;
+    color: #e30000;
+    font-size: 1rem;
+  }
+  .planned-date-input {
+    border: 2px solid #e30000;
+    background-color: #fff2f2;
+    padding: 4px;
+    font-size: 1rem;
+    margin-top: 5px;
+  }
+  
+  /********************************************
+   * Block #O: フィールドセット(折り畳み)
+  ********************************************/
+  .collapsible {
+    border: 1px solid #aaa;
+    margin-bottom: 15px;
+    position: relative;
+  }
+  .collapsible legend {
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+  .collapsible .fold-icon {
+    margin-left: 4px;
+  }
+  .collapsible.open .fieldset-content {
+    display: block;
+  }
+  .collapsible.closed .fieldset-content {
+    display: none;
+  }
+  .label-right {
+    display: inline-block;
+    width: 120px;
+    text-align: right;
+    margin-right: 6px;
+    font-weight: bold;
+  }
+  .form-row {
+    margin: 4px 0;
+  }
+  legend {
+    font-weight: bold;
+    margin-left: 10px;
+  }
+  

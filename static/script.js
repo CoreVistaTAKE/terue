@@ -2268,12 +2268,62 @@ function openDailyReportMenu() {
 }
 
 /********************************************
-  Block #8a: 業務日誌作成
-   - openDailyReport()
-   - openDailyReportCreate()
-   - openDailyReportConfirm()
-   - toggleDayPortion()
-   - toggleExtraStaff()
+  共通: スクロール関連/表示切替用の小ヘルパー
+********************************************/
+// 業務日誌の「基本情報入力」へ戻る (スクロール上部)
+function goBackToDailyReportBasic() {
+  window.scrollTo(0, 0);
+  openDailyReport();
+}
+
+// 業務日誌一覧(検索結果)に戻る (スクロール上部 & 再検索)
+function returnToDailyReportList() {
+  window.scrollTo(0, 0);
+  openDailyReportDisplay();
+}
+
+// サービス提供記録一覧(検索結果)に戻る (スクロール上部 & 再検索)
+function returnToServiceRecordList() {
+  window.scrollTo(0, 0);
+  openServiceRecordDisplay();
+}
+
+// 「帰宅時の様子」のラベルに変換
+function getHomeStateLabel(value) {
+  switch (value) {
+    case "1":
+      return "特に気になることはありません。";
+    case "2":
+      return "少し疲れた様子";
+    case "3":
+      return "体調不良の訴え";
+    case "4":
+      return "不穏な雰囲気";
+    default:
+      return value || "";
+  }
+}
+
+// 「起床時の様子」のラベルに変換
+function getWakeStateLabel(value) {
+  switch (value) {
+    case "1":
+      return "ご自身で起床";
+    case "2":
+      return "声掛けで起床";
+    case "3":
+      return "体調不良の訴え";
+    case "4":
+      return "不穏な雰囲気";
+    case "5":
+      return "その他";
+    default:
+      return value || "";
+  }
+}
+
+/********************************************
+  Block #8a: 業務日誌作成 (基本情報入力 ~ 詳細 ~ 確認)
 ********************************************/
 
 // 入力途中の業務日誌データを一時保管する
@@ -2435,9 +2485,9 @@ function openDailyReport() {
     document.getElementById("lunch-menu").value = tempDailyReportData.lunch || "";
     document.getElementById("dinner-menu").value = tempDailyReportData.dinner || "";
     document.getElementById("breakfast-menu").value = tempDailyReportData.breakfast || "";
-    document.getElementById("check23").value = tempDailyReportData.check23 || "";
-    document.getElementById("check1").value  = tempDailyReportData.check1 || "";
-    document.getElementById("check3").value  = tempDailyReportData.check3 || "";
+    document.getElementById("check23").value = tempDailyReportData.check23 || "23時巡視　呼吸安定・良眠";
+    document.getElementById("check1").value  = tempDailyReportData.check1 || "1時巡視　呼吸安定・良眠";
+    document.getElementById("check3").value  = tempDailyReportData.check3 || "4時巡視　呼吸安定・良眠";
   }
 
   // ▼ 利用者一覧を取得して動的にボタンを生成する例
@@ -2460,6 +2510,21 @@ function openDailyReport() {
       console.log("利用者一覧取得エラー:", err);
     });
 }
+
+/** 日中有無トグル */
+function toggleDayPortion(isDaytime) {
+  const dayStaffBlock = document.getElementById("dayStaffBlock");
+  const lunchSection = document.getElementById("lunch-section");
+  if (dayStaffBlock) dayStaffBlock.style.display = isDaytime ? "block" : "none";
+  if (lunchSection) lunchSection.style.display = isDaytime ? "block" : "none";
+}
+
+/** 追加スタッフ有無トグル */
+function toggleExtraStaff(hasExtra) {
+  const extraStaffBlock = document.getElementById("extraStaffBlock");
+  if (extraStaffBlock) extraStaffBlock.style.display = hasExtra ? "block" : "none";
+}
+
 
 /**
  * 業務日誌 詳細入力画面
@@ -2534,37 +2599,32 @@ function openDailyReportCreate() {
   tempDailyReportData.isDaytime = isDay;
   tempDailyReportData.hasExtraStaff = isExtra;
 
-  // ===============================
-  // 枠1: 日時・スタッフ名
-  // ===============================
+  // (枠1) 日時・スタッフ名
   let frame1 = `
     <div style="border:2px solid #444; padding:10px; margin-bottom:10px; border-radius:6px;">
       <h3 style="font-size:1.1rem; margin-bottom:6px;">枠1: 日時・スタッフ名</h3>
-
       <p style="margin:4px 0; font-size:1rem;">
         <strong>記録日:</strong> ${tempDailyReportData.dateValue || "(未入力)"}
       </p>
       ${
         tempDailyReportData.isDaytime
           ? `<p style="margin:4px 0; font-size:1rem;"><strong>日中スタッフ:</strong> ${tempDailyReportData.staffDay} (${tempDailyReportData.staffDayTime})</p>`
-          : ``
+          : ""
       }
       <p style="margin:4px 0; font-size:1rem;">
         <strong>夜勤スタッフ:</strong> ${tempDailyReportData.staffNight}${
-          tempDailyReportData.staffNightTime ? ` (${tempDailyReportData.staffNightTime})` : ""
+          tempDailyReportData.staffNightTime ?  ` (${tempDailyReportData.staffNightTime})` : ""
         }
       </p>
       ${
         tempDailyReportData.hasExtraStaff
           ? `<p style="margin:4px 0; font-size:1rem;"><strong>追加スタッフ:</strong> ${tempDailyReportData.staffExtra} (${tempDailyReportData.staffExtraTime})</p>`
-          : ``
+          : ""
       }
     </div>
   `;
 
-  // ===============================
   // (枠2) 食事の献立
-  // ===============================
   let lunchBlock = tempDailyReportData.isDaytime ? `
     <div style="margin:4px 0;">
       <strong>昼食の献立:</strong>
@@ -2575,14 +2635,11 @@ function openDailyReportCreate() {
   let frame2 = `
     <div style="border:2px solid #444; padding:10px; margin-bottom:10px; border-radius:6px;">
       <h3 style="font-size:1.1rem; margin-bottom:6px;">枠2: 食事の献立</h3>
-
       ${ lunchBlock }
-
       <div style="margin:4px 0;">
         <strong>夕食の献立:</strong>
         <input type="text" id="dinnerMealInput" size="60" value="${tempDailyReportData.dinner || ""}" />
       </div>
-
       <div style="margin:4px 0;">
         <strong>朝食の献立:</strong>
         <input type="text" id="breakfastMealInput" size="60" value="${tempDailyReportData.breakfast || ""}" />
@@ -2590,16 +2647,12 @@ function openDailyReportCreate() {
     </div>
   `;
 
-  // ===============================
   // (枠3) 当日業務の報告
-  // ===============================
   const bcVal = tempDailyReportData.businessContent || "";
   const riVal = tempDailyReportData.relayInfo || "";
-
   let frame3 = `
     <div style="border:2px solid #444; padding:10px; margin-bottom:10px; border-radius:6px;">
       <h3 style="font-size:1.1rem; margin-bottom:6px;">枠3: 当日業務の報告</h3>
-
       <div style="margin:4px 0;">
         <label>業務内容:</label><br>
         <textarea id="businessContent" rows="3" style="width:100%;">${bcVal}</textarea>
@@ -2611,9 +2664,7 @@ function openDailyReportCreate() {
     </div>
   `;
 
-  // ===============================
   // ボタン
-  // ===============================
   let buttonSection = `
     <div style="margin-top:10px;">
       <button id="toConfirmBtn"
@@ -2677,7 +2728,6 @@ function openDailyReportConfirm() {
 
   const dh = document.getElementById("detail-header");
   const dc = document.getElementById("detail-content");
-
   dh.innerText = "業務日誌 確認画面";
 
   const dateValue       = tempDailyReportData.dateValue      || "(未入力)";
@@ -2705,7 +2755,7 @@ function openDailyReportConfirm() {
           ? `<p style="font-size:1rem;"><strong>日中スタッフ:</strong> ${staffDay} (${staffDayTime})</p>`
           : ""
       }
-      <p style="font-size:1rem;"><strong>夜勤スタッフ:</strong> ${staffNight}${staffNightTime?` (${staffNightTime})`:``}</p>
+      <p style="font-size:1rem;"><strong>夜勤スタッフ:</strong> ${staffNight}${staffNightTime? ` (${staffNightTime})`:""}</p>
       ${
         hasExtraStaff
           ? `<p style="font-size:1rem;"><strong>追加スタッフ:</strong> ${staffExtra} (${staffExtraTime})</p>`
@@ -2751,6 +2801,10 @@ function openDailyReportConfirm() {
               onclick="openDailyReportCreate()">
         修正
       </button>
+      <button style="margin-left:15px; background:none; color:#333; border:1px solid #ccc; padding:6px 12px; border-radius:4px;"
+              onclick="openDailyReport()">
+        基本情報入力へ
+      </button>
     </div>
   `;
 
@@ -2768,7 +2822,7 @@ function openDailyReportConfirm() {
 }
 
 /**
- * DB保存
+ * DB保存 → 保存後は "基本情報入力" 画面へ戻る
  */
 function saveDailyReportToDB() {
   const fd = new FormData();
@@ -2807,41 +2861,25 @@ function saveDailyReportToDB() {
         showMonthDay = `${parseInt(mm,10)}月${parseInt(dd,10)}日`;
       }
       alert(`${showMonthDay}の業務日誌を保存しました (ID:${newId}).`);
-      openDailyReportMenu();
+      // 保存後 → 基本情報入力へ
+      openDailyReport();
     })
     .catch(err => {
       console.error(err);
       alert("エラー: " + err);
     });
 }
-
-/** 日中有無トグル */
-function toggleDayPortion(isDaytime) {
-  const dayStaffBlock = document.getElementById("dayStaffBlock");
-  const lunchSection = document.getElementById("lunch-section");
-  if (dayStaffBlock) dayStaffBlock.style.display = isDaytime ? "block" : "none";
-  if (lunchSection) lunchSection.style.display = isDaytime ? "block" : "none";
-}
-
-/** 追加スタッフ有無トグル */
-function toggleExtraStaff(hasExtra) {
-  const extraStaffBlock = document.getElementById("extraStaffBlock");
-  if (extraStaffBlock) extraStaffBlock.style.display = hasExtra ? "block" : "none";
-}
-
 /********************************************
-  Block #8b: 業務日誌表示
-   - openDailyReportDisplay()
-   - fetchDailyReportsByRange()
-   - renderDailyReportList()
-   - confirmDailyReport(reportId)
-   - editDailyReport(reportId)
-   - deleteDailyReportConfirm(reportId, dateStr)
-   - openDailyReportPdfModal(reportId)
-   - closePdfModal()
-   - printPdf()
+  Block #8b: 業務日誌表示 (一覧検索 / 管理者確認など)
 ********************************************/
 
+// 検索期間を保持して再表示に使う
+let gDailyReportStartDate = "";
+let gDailyReportEndDate   = "";
+
+/**
+ * 業務日誌表示画面 (一覧検索)
+ */
 function openDailyReportDisplay() {
   // 画面切り替え時に上部へスクロール
   window.scrollTo(0, 0);
@@ -2857,13 +2895,17 @@ function openDailyReportDisplay() {
   const dd = ("0" + today.getDate()).slice(-2);
   const defaultToday = `${yyyy}-${mm}-${dd}`;
 
+  // gDailyReportStartDate が保存されていればそれを表示
+  const startVal = gDailyReportStartDate || defaultToday;
+  const endVal   = gDailyReportEndDate   || defaultToday;
+
   const html = `
     <div style="border:2px solid #00a0c0; padding:10px; margin-bottom:10px; border-radius:4px;">
       <h3>日付・期間を指定</h3>
       <p>同じ日付を両方に入力すると1日のみ表示。</p>
       <div style="margin:5px 0;">
-        開始日 <input type="date" id="report-start" value="${defaultToday}">
-        終了日 <input type="date" id="report-end" value="${defaultToday}">
+        開始日 <input type="date" id="report-start" value="${startVal}">
+        終了日 <input type="date" id="report-end" value="${endVal}">
         <button onclick="fetchDailyReportsByRange()">表示</button>
       </div>
     </div>
@@ -2895,6 +2937,11 @@ function openDailyReportDisplay() {
       }
     });
   }
+
+  // もし既に検索期間があれば自動で検索
+  if (gDailyReportStartDate && gDailyReportEndDate) {
+    fetchDailyReportsByRange();
+  }
 }
 
 function fetchDailyReportsByRange() {
@@ -2905,6 +2952,10 @@ function fetchDailyReportsByRange() {
     alert("開始日と終了日を入力してください。");
     return;
   }
+  // グローバルに保存
+  gDailyReportStartDate = startDate;
+  gDailyReportEndDate   = endDate;
+
   const url = `/daily_reports?start_date=${startDate}&end_date=${endDate}`;
   fetch(url)
     .then(r => r.json())
@@ -2968,12 +3019,8 @@ function renderDailyReportList(reportList) {
 
           <div style="display:flex; gap:4px;">
             <button style="background:#007bff; color:#fff; border:none; padding:4px 8px; border-radius:4px;"
-                    onclick="confirmDailyReport(${rep.id})">
-              確認
-            </button>
-            <button style="background:#ffcc00; color:#333; border:none; padding:4px 8px; border-radius:4px;"
-                    onclick="editDailyReport(${rep.id})">
-              修正
+                    onclick="openDailyReportManagerConfirm(${rep.id})">
+              管理者確認
             </button>
             <button style="background:#cc3333; color:#fff; border:none; padding:4px 8px; border-radius:4px;"
                     onclick="deleteDailyReportConfirm(${rep.id}, '${dateStr}')">
@@ -2996,8 +3043,11 @@ function renderDailyReportList(reportList) {
   container.innerHTML = html;
 }
 
-/** 管理者確認(青) */
-function confirmDailyReport(reportId) {
+/**
+ * 業務日誌 管理者確認画面
+ * (従来の confirmDailyReport を一部改変し、ボタン構成を変えます)
+ */
+function openDailyReportManagerConfirm(reportId) {
   // 画面切り替え時に上部へスクロール
   window.scrollTo(0, 0);
 
@@ -3024,86 +3074,83 @@ function confirmDailyReport(reportId) {
 
       const detailHeader = document.getElementById("detail-header");
       const detailContent = document.getElementById("detail-content");
-      detailHeader.innerText = "業務日誌 確認画面";
+      detailHeader.innerText = "業務日誌 管理者確認画面";
 
-      let frame1 = `
+      // managerCheckの表示
+      let mgrStateLabel = (managerCheckVal === "on")
+        ? `<span style="color:green; font-weight:bold;">完了</span>`
+        : `<span style="color:red; font-weight:bold;">未完了</span>`;
+      let mgrChecked = (managerCheckVal === "on") ? "checked" : "";
+
+      // 内容表示
+      let bcVal = cObj.businessContent || "";
+      let riVal = cObj.relayInfo || "";
+
+      let html = `
+        <h2>業務日誌 管理者確認 (ID:${data.id})</h2>
         <div style="border:2px solid #444; border-radius:6px; padding:10px; margin-bottom:10px;">
           <h3 style="font-size:1.1rem; margin-bottom:6px;">日時・スタッフ名</h3>
           <p><strong>記録日:</strong> ${mmddLabel}</p>
-      `;
-      if (data.staff_day) {
-        let dayTime = cObj.day_time || "";
-        frame1 += `<p><strong>日中スタッフ:</strong> ${data.staff_day}`;
-        if (dayTime) frame1 += ` (勤務時間:${dayTime})`;
-        frame1 += `</p>`;
-      }
-      let nightTime = cObj.night_time || "";
-      frame1 += `<p><strong>夜勤スタッフ:</strong> ${data.staff_night}`;
-      if (nightTime) {
-        frame1 += ` (勤務時間:${nightTime})`;
-      }
-      frame1 += `</p>`;
-      if (data.staff_extra) {
-        let extraTime = cObj.extra_time || "";
-        frame1 += `<p><strong>追加スタッフ:</strong> ${data.staff_extra}`;
-        if (extraTime) {
-          frame1 += ` (勤務時間:${extraTime})`;
-        }
-        frame1 += `</p>`;
-      }
-      frame1 += `</div>`;
-
-      let frame2 = `
-        <div style="border:2px solid #444; border-radius:6px; padding:10px; margin-bottom:10px;">
-          <h3 style="font-size:1.1rem; margin-bottom:6px;">食事の献立</h3>
-      `;
-      if (data.staff_day && data.lunch_menu) {
-        frame2 += `<p><strong>昼食の献立:</strong> ${data.lunch_menu}</p>`;
-      }
-      frame2 += `<p><strong>夕食の献立:</strong> ${data.dinner_menu || ""}</p>
-                 <p><strong>朝食の献立:</strong> ${data.breakfast_menu || ""}</p>
+          ${
+            data.staff_day
+              ? `<p><strong>日中スタッフ:</strong> ${data.staff_day}</p>`
+              : ""
+          }
+          <p><strong>夜勤スタッフ:</strong> ${data.staff_night || ""}</p>
+          ${
+            data.staff_extra
+              ? `<p><strong>追加スタッフ:</strong> ${data.staff_extra}</p>`
+              : ""
+          }
         </div>
-      `;
-
-      let bcVal = cObj.businessContent || "";
-      let riVal = cObj.relayInfo || "";
-      let frame3 = `
         <div style="border:2px solid #444; border-radius:6px; padding:10px; margin-bottom:10px;">
-          <h3 style="font-size:1.1rem; margin-bottom:6px;">当日業務の報告</h3>
-          <p><strong>業務内容:</strong><br>"${bcVal}"</p>
-          <hr style="margin:8px 0;">
-          <p><strong>連絡・引継ぎ事項:</strong><br>"${riVal}"</p>
+          <h3>食事の献立</h3>
+          ${
+            data.staff_day && data.lunch_menu
+              ? `<p><strong>昼食:</strong> ${data.lunch_menu}</p>`
+              : ""
+          }
+          <p><strong>夕食:</strong> ${data.dinner_menu || ""}</p>
+          <p><strong>朝食:</strong> ${data.breakfast_menu || ""}</p>
         </div>
-      `;
+        <div style="border:2px solid #444; border-radius:6px; padding:10px; margin-bottom:10px;">
+          <h3>業務内容・連絡事項</h3>
+          <p><strong>業務内容:</strong><br>${bcVal}</p>
+          <hr/>
+          <p><strong>連絡・引継ぎ事項:</strong><br>${riVal}</p>
+        </div>
 
-      let mgrStateLabel = (managerCheckVal === "on")
-        ? `<span style="color:red; font-weight:bold;">確認済</span>`
-        : `<span style="color:#999;">未完了</span>`;
-
-      let frame4 = `
         <div style="border:2px solid #444; border-radius:6px; padding:10px;">
-          <h3 style="font-size:1.1rem; margin-bottom:6px;">管理者確認</h3>
+          <h3>管理者確認</h3>
           <label>
-            <input type="checkbox" id="managerCheck" ${managerCheckVal === "on" ? "checked" : ""}>
+            <input type="checkbox" id="managerCheck" ${mgrChecked}>
             管理者確認
           </label>
           <p style="margin-top:6px;"><strong>現在の状態:</strong> ${mgrStateLabel}</p>
           <div style="margin-top:10px;">
-            <button onclick="saveManagerCheck(${data.id})">管理者確認を保存</button>
+            <button onclick="saveManagerCheck(${data.id})"
+                    style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px;"
+            >
+              管理者確認を更新
+            </button>
           </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <button
+            style="background:#ffcc00; color:#333; border:none; padding:6px 12px; border-radius:4px; margin-right:15px;"
+            onclick="openDailyReportManagerEdit(${data.id})">
+            修正
+          </button>
+          <button
+            style="background:none; color:#333; border:1px solid #ccc; padding:6px 12px; border-radius:4px;"
+            onclick="returnToDailyReportList()">
+            一覧に戻る
+          </button>
         </div>
       `;
 
-      detailContent.innerHTML = `
-        <h2>業務日誌 確認</h2>
-        ${frame1}
-        ${frame2}
-        ${frame3}
-        ${frame4}
-        <div style="margin-top:10px;">
-          <button onclick="openDailyReportDisplay()">一覧へ戻る</button>
-        </div>
-      `;
+      detailContent.innerHTML = html;
     })
     .catch(err => {
       alert("エラー: " + err);
@@ -3144,8 +3191,8 @@ function saveManagerCheck(reportId) {
       fetch("/save_daily_report", { method: "POST", body: fd })
         .then(r => r.text())
         .then(res => {
-          alert("管理者確認を保存しました。");
-          confirmDailyReport(reportId);
+          alert("管理者確認を更新しました。");
+          openDailyReportManagerConfirm(reportId);
         })
         .catch(err => {
           alert("保存中にエラー:" + err);
@@ -3156,7 +3203,11 @@ function saveManagerCheck(reportId) {
     });
 }
 
-function editDailyReport(reportId) {
+/**
+ * 業務日誌 管理者修正画面
+ * → 従来の editDailyReport に似た処理 + ボタン違い
+ */
+function openDailyReportManagerEdit(reportId) {
   // 画面切り替え時に上部へスクロール
   window.scrollTo(0, 0);
 
@@ -3172,6 +3223,7 @@ function editDailyReport(reportId) {
         cObj = JSON.parse(data.content_json || "{}");
       } catch(e){}
 
+      // tempDailyReportData に再格納
       tempDailyReportData.dateValue     = data.report_date  || "";
       tempDailyReportData.staffDay      = data.staff_day    || "";
       tempDailyReportData.staffNight    = data.staff_night  || "";
@@ -3195,16 +3247,161 @@ function editDailyReport(reportId) {
       tempDailyReportData.isDaytime      = !!data.staff_day;
       tempDailyReportData.hasExtraStaff  = !!data.staff_extra;
 
-      openDailyReport();
-      setTimeout(()=>{
-        openDailyReportCreate();
-      }, 200);
+      // 管理者修正画面 (業務日誌詳細入力画面のデザイン + 管理者向けボタン)
+      openDailyReportManagerEditForm(reportId);
     })
     .catch(err => {
       alert("エラー:"+err);
     });
 }
 
+/**
+ * 業務日誌 管理者修正画面フォーム (実際の描画)
+ */
+function openDailyReportManagerEditForm(reportId) {
+  const dh = document.getElementById("detail-header");
+  const dc = document.getElementById("detail-content");
+  dh.innerText = "業務日誌 管理者修正画面";
+
+  // (実質、業務日誌詳細入力画面 + 最終ボタンは「管理者確認」)
+  // ここでは既に tempDailyReportData に修正対象のデータが詰まっている前提
+
+  // (枠1)
+  let frame1 = `
+    <div style="border:2px solid #444; padding:10px; margin-bottom:10px; border-radius:6px;">
+      <h3 style="font-size:1.1rem; margin-bottom:6px;">枠1: 日時・スタッフ名</h3>
+      <p><strong>記録日:</strong> ${tempDailyReportData.dateValue}</p>
+      ${
+        tempDailyReportData.isDaytime
+          ? `<p><strong>日中スタッフ:</strong> ${tempDailyReportData.staffDay} (${tempDailyReportData.staffDayTime||""})</p>`
+          : ""
+      }
+      <p><strong>夜勤スタッフ:</strong> ${tempDailyReportData.staffNight} (${tempDailyReportData.staffNightTime||""})</p>
+      ${
+        tempDailyReportData.hasExtraStaff
+          ? `<p><strong>追加スタッフ:</strong> ${tempDailyReportData.staffExtra} (${tempDailyReportData.staffExtraTime||""})</p>`
+          : ""
+      }
+    </div>
+  `;
+
+  // (枠2)
+  let lunchBlock = tempDailyReportData.isDaytime ? `
+    <div style="margin:4px 0;">
+      <strong>昼食の献立:</strong>
+      <input type="text" id="lunchMealInputMgr" size="60" value="${tempDailyReportData.lunch || ""}" />
+    </div>
+  ` : "";
+
+  let frame2 = `
+    <div style="border:2px solid #444; padding:10px; margin-bottom:10px; border-radius:6px;">
+      <h3>枠2: 食事の献立</h3>
+      ${lunchBlock}
+      <div style="margin:4px 0;">
+        <strong>夕食の献立:</strong>
+        <input type="text" id="dinnerMealInputMgr" size="60" value="${tempDailyReportData.dinner || ""}" />
+      </div>
+      <div style="margin:4px 0;">
+        <strong>朝食の献立:</strong>
+        <input type="text" id="breakfastMealInputMgr" size="60" value="${tempDailyReportData.breakfast || ""}" />
+      </div>
+    </div>
+  `;
+
+  // (枠3)
+  let frame3 = `
+    <div style="border:2px solid #444; padding:10px; margin-bottom:10px; border-radius:6px;">
+      <h3>枠3: 当日業務の報告</h3>
+      <div style="margin:4px 0;">
+        <label>業務内容:</label><br>
+        <textarea id="businessContentMgr" rows="3" style="width:100%;">${tempDailyReportData.businessContent||""}</textarea>
+      </div>
+      <div style="margin:4px 0;">
+        <label>連絡・引継ぎ事項:</label><br>
+        <textarea id="relayInfoMgr" rows="3" style="width:100%;">${tempDailyReportData.relayInfo||""}</textarea>
+      </div>
+    </div>
+  `;
+
+  // ボタン: 「管理者確認」→ openDailyReportManagerConfirm(reportId)
+  let buttonSection = `
+    <div style="margin-top:10px;">
+      <button
+        style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px;"
+        onclick="saveDailyReportManagerEdit(${reportId})"
+      >
+        管理者確認
+      </button>
+      <button
+        style="margin-left:15px; background:none; color:#333; border:1px solid #ccc; padding:6px 12px; border-radius:4px;"
+        onclick="returnToDailyReportList()"
+      >
+        一覧に戻る
+      </button>
+    </div>
+  `;
+
+  const html = `
+    <h2>業務日誌 管理者修正</h2>
+    ${frame1}
+    ${frame2}
+    ${frame3}
+    ${buttonSection}
+  `;
+  dc.innerHTML = html;
+}
+
+function saveDailyReportManagerEdit(reportId) {
+  // 変更を tempDailyReportData に再格納
+  const lunchEl   = document.getElementById("lunchMealInputMgr");
+  const dinnerEl  = document.getElementById("dinnerMealInputMgr");
+  const breakEl   = document.getElementById("breakfastMealInputMgr");
+  const bc        = document.getElementById("businessContentMgr");
+  const ri        = document.getElementById("relayInfoMgr");
+
+  if(lunchEl) tempDailyReportData.lunch = lunchEl.value;
+  if(dinnerEl) tempDailyReportData.dinner = dinnerEl.value;
+  if(breakEl) tempDailyReportData.breakfast = breakEl.value;
+  if(bc) tempDailyReportData.businessContent = bc.value;
+  if(ri) tempDailyReportData.relayInfo = ri.value;
+
+  // DB更新
+  const fd = new FormData();
+  fd.append("report_date", tempDailyReportData.dateValue || "");
+  fd.append("user_name", "共通日報");
+
+  fd.append("staff_day", tempDailyReportData.isDaytime ? (tempDailyReportData.staffDay||"") : "");
+  fd.append("staff_night", tempDailyReportData.staffNight||"");
+  fd.append("staff_extra", tempDailyReportData.hasExtraStaff ? (tempDailyReportData.staffExtra||"") : "");
+
+  fd.append("lunch_menu", tempDailyReportData.lunch || "");
+  fd.append("dinner_menu", tempDailyReportData.dinner || "");
+  fd.append("breakfast_menu", tempDailyReportData.breakfast || "");
+
+  fd.append("check_23", tempDailyReportData.check23 || "");
+  fd.append("check_1", tempDailyReportData.check1 || "");
+  fd.append("check_3", tempDailyReportData.check3 || "");
+
+  const contentObj = {
+    businessContent: tempDailyReportData.businessContent || "",
+    relayInfo: tempDailyReportData.relayInfo || "",
+    managerCheck: tempDailyReportData.managerCheck || "off"
+  };
+  fd.append("content_json", JSON.stringify(contentObj));
+
+  fetch("/save_daily_report", { method:"POST", body:fd })
+    .then(r=>r.text())
+    .then(msg=>{
+      alert("修正内容を保存しました。");
+      // → 管理者確認画面へ
+      openDailyReportManagerConfirm(reportId);
+    })
+    .catch(err=> alert("エラー:"+err));
+}
+
+/**
+ * 削除確認
+ */
 function deleteDailyReportConfirm(reportId, dateStr) {
   let mmdd = dateStr;
   if (dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)) {
@@ -3221,7 +3418,8 @@ function deleteDailyReportConfirm(reportId, dateStr) {
     .then(msg=>{
       if(msg==="ok"){
         alert(`${mmdd}の業務日誌を削除しました。`);
-        fetchDailyReportsByRange();
+        // 再検索
+        openDailyReportDisplay();
       } else {
         alert("削除に失敗: " + msg);
       }
@@ -3231,6 +3429,9 @@ function deleteDailyReportConfirm(reportId, dateStr) {
     });
 }
 
+/**
+ * PDFモーダルを開く
+ */
 function openDailyReportPdfModal(reportId) {
   const pdfModal = document.getElementById("pdf-modal");
   const iframe = document.getElementById("pdf-iframe");
@@ -3250,12 +3451,9 @@ function printPdf() {
   iframe.contentWindow.print();
 }
 
+
 /********************************************
-  Block #9a: サービス提供記録
-   - openServiceRecordUser()
-   - loadUserCarePlan()
-   - openServiceRecordConfirm()
-   - saveServiceRecordToDB()
+  Block #9a: サービス提供記録 (入力 ~ 確認)
 ********************************************/
 
 let tempServiceRecordData = {};
@@ -3602,9 +3800,9 @@ function openServiceRecordUser(userId, userName) {
       </button>
       <button
         style="margin-left:15px; background:none; color:#333; border:1px solid #ccc; padding:6px 12px; border-radius:4px;"
-        onclick="openDailyReport()"
+        onclick="goBackToDailyReportBasic()"
       >
-        基本情報入力へ戻る
+        基本情報入力へ
       </button>
     </div>
   `;
@@ -3763,7 +3961,7 @@ function loadUserCarePlan(userId) {
 }
 
 /**
- * 確認画面
+ * サービス提供記録 確認画面
  */
 function openServiceRecordConfirm(userName) {
   // 上部へスクロール
@@ -3858,80 +4056,88 @@ function openServiceRecordConfirm(userName) {
 
   dh.innerText = `${userName}さんのサービス提供記録 確認画面`;
 
-  // 確認画面HTML（全項目表示）
-  let html = `
-    <h2>${userName}さんのサービス提供記録 確認</h2>
-    <div style="border:1px solid #ccc; padding:10px;">
-      <p><strong>記録日:</strong> ${tempServiceRecordData.dateValue}</p>
-      <p><strong>(夜間)スタッフ:</strong> ${tempServiceRecordData.staffNight} (${tempServiceRecordData.staffNightTime})</p>
-      ${
-        tempServiceRecordData.isDaytime
-          ? `<p><strong>(日中)スタッフ:</strong> ${tempServiceRecordData.staffDay} (${tempServiceRecordData.staffDayTime})</p>`
-          : ``
-      }
-      ${
-        tempServiceRecordData.hasExtraStaff
-          ? `<p><strong>(追加)スタッフ:</strong> ${tempServiceRecordData.staffExtra} (${tempServiceRecordData.staffExtraTime})</p>`
-          : ``
-      }
-      <hr/>
-  `;
+  // 帰宅時の様子
+  const homeStateLabel = getHomeStateLabel(tempServiceRecordData.homeState);
+  // 起床時の様子
+  const wakeStateLabel = getWakeStateLabel(tempServiceRecordData.wakeState);
 
-  if(tempServiceRecordData.isDaytime){
-    html += `
-      <p><strong>昼食:</strong> 残量:${tempServiceRecordData.dayMealScore}/10 ${
-        tempServiceRecordData.dayMealLeft?`残:${tempServiceRecordData.dayMealLeft}`:""
-      }</p>
-      <p><strong>日中の様子:</strong> ${tempServiceRecordData.dayStatus}</p>
-      <hr/>
-    `;
+  // 介助項目はonのものだけ表示
+  function showAssist(label, checked, detail) {
+    if(checked==="on") {
+      return `<p><strong>${label}:</strong> ${checked} ${detail}</p>`;
+    } else {
+      return "";
+    }
   }
 
-  // 夕食
-  html += `
-    <p><strong>夕食バイタル:</strong> 体温:${tempServiceRecordData.dinnerTemp}℃ / SpO2:${tempServiceRecordData.dinnerSpo2}</p>
-    <p><strong>夕食:</strong> 残量:${tempServiceRecordData.dinnerMealScore}/10 ${
-      tempServiceRecordData.dinnerMealLeft?`残:${tempServiceRecordData.dinnerMealLeft}`:""
-    }</p>
-    <hr/>
-    <p><strong>就寝前服薬:</strong> ${tempServiceRecordData.sleepMeds}</p>
-    <p><strong>就寝時間:</strong> ${tempServiceRecordData.sleepTime}</p>
-    <hr/>
-    <p><strong>巡視:</strong> ${tempServiceRecordData.check23User} / ${tempServiceRecordData.check1User} / ${tempServiceRecordData.check3User}</p>
-    <hr/>
-    <p><strong>起床時間:</strong> ${tempServiceRecordData.wakeTime}</p>
-    <p><strong>起床時の様子:</strong> ${tempServiceRecordData.wakeState} ${tempServiceRecordData.wakeDetail}</p>
-    <hr/>
-    <p><strong>朝食:</strong> 残量:${tempServiceRecordData.breakfastMealScore}/10 ${
-      tempServiceRecordData.breakfastMealLeft?`残:${tempServiceRecordData.breakfastMealLeft}`:""
-    }</p>
-    <p><strong>利用者の様子:</strong> ${tempServiceRecordData.userCondition}</p>
-    <hr/>
-    <p><strong>食事介助:</strong> ${tempServiceRecordData.foodAssistChecked} ${tempServiceRecordData.foodAssistDetail}</p>
-    <p><strong>入浴介助:</strong> ${tempServiceRecordData.bathAssistChecked} ${tempServiceRecordData.bathAssistDetail}</p>
-    <p><strong>排泄介助:</strong> ${tempServiceRecordData.excretionAssistChecked} ${tempServiceRecordData.excretionAssistDetail}</p>
-    <p><strong>着替え介助:</strong> ${tempServiceRecordData.changeAssistChecked} ${tempServiceRecordData.changeAssistDetail}</p>
-    <p><strong>生活支援:</strong> ${tempServiceRecordData.lifeSupportChecked} ${tempServiceRecordData.lifeSupportDetail}</p>
-    <p><strong>メンタルケア:</strong> ${tempServiceRecordData.mentalCareChecked} ${tempServiceRecordData.mentalCareDetail}</p>
-    <hr/>
-  `;
-
+  // 個別支援
+  let stgHtml = "";
   if(tempServiceRecordData.longTermGoalSupport){
-    html += `<p><strong>長期目標に対する支援:</strong><br>${tempServiceRecordData.longTermGoalSupport}</p><hr/>`;
+    stgHtml += `<p><strong>長期目標に対する支援:</strong><br>${tempServiceRecordData.longTermGoalSupport}</p><hr/>`;
   }
-
   const cKeys = Object.keys(tempServiceRecordData.shortTermComments||{});
   if(cKeys.length>0){
     cKeys.sort((a,b)=>(+a)-(+b));
     cKeys.forEach(idx=>{
       const commentVal = tempServiceRecordData.shortTermComments[idx];
       if(commentVal){
-        html += `<p><strong>短期目標${idx}に対するコメント:</strong><br>${commentVal}</p><hr/>`;
+        stgHtml += `<p><strong>短期目標${idx}に対するコメント:</strong><br>${commentVal}</p><hr/>`;
       }
     });
   }
 
-  html += `
+  let html = `
+    <h2>${userName}さんのサービス提供記録 確認</h2>
+    <div style="border:1px solid #ccc; padding:10px;">
+      <p><strong>記録日:</strong> ${tempServiceRecordData.dateValue}</p>
+      ${
+        tempServiceRecordData.isDaytime
+          ? `<p><strong>(日中)スタッフ:</strong> ${tempServiceRecordData.staffDay} (${tempServiceRecordData.staffDayTime})</p>`
+          : ""
+      }
+      <p><strong>(夜間)スタッフ:</strong> ${tempServiceRecordData.staffNight} (${tempServiceRecordData.staffNightTime})</p>
+      ${
+        tempServiceRecordData.hasExtraStaff
+          ? `<p><strong>(追加)スタッフ:</strong> ${tempServiceRecordData.staffExtra} (${tempServiceRecordData.staffExtraTime})</p>`
+          : ""
+      }
+      <hr/>
+      ${
+        tempServiceRecordData.isDaytime
+          ? `<p><strong>昼食:</strong> 残量:${tempServiceRecordData.dayMealScore}/10 ${tempServiceRecordData.dayMealLeft? "残:"+tempServiceRecordData.dayMealLeft:""}</p>
+             <p><strong>日中の様子:</strong> ${tempServiceRecordData.dayStatus}</p>`
+          : ""
+      }
+      <p><strong>日中活動:</strong> ${tempServiceRecordData.daytimeActivity}</p>
+      <p><strong>帰宅時間:</strong> ${tempServiceRecordData.homeTime}</p>
+      <p><strong>帰宅時の様子:</strong> ${homeStateLabel} ${tempServiceRecordData.homeStateDetail}</p>
+      <hr/>
+      <p><strong>夕食バイタル:</strong> 体温:${tempServiceRecordData.dinnerTemp}℃ / SpO2:${tempServiceRecordData.dinnerSpo2}</p>
+      <p>血圧:${tempServiceRecordData.dinnerBP1}/${tempServiceRecordData.dinnerBP2}, 脈拍:${tempServiceRecordData.dinnerPulse}</p>
+      <p><strong>夕食:</strong> 残量:${tempServiceRecordData.dinnerMealScore}/10 ${tempServiceRecordData.dinnerMealLeft? "残:"+tempServiceRecordData.dinnerMealLeft:""}</p>
+      <hr/>
+      <p><strong>就寝前服薬:</strong> ${tempServiceRecordData.sleepMeds}</p>
+      <p><strong>就寝時間:</strong> ${tempServiceRecordData.sleepTime}</p>
+      <hr/>
+      <p><strong>巡視1:</strong> ${tempServiceRecordData.check23User}</p>
+      <p><strong>巡視2:</strong> ${tempServiceRecordData.check1User}</p>
+      <p><strong>巡視3:</strong> ${tempServiceRecordData.check3User}</p>
+      <hr/>
+      <p><strong>起床時間:</strong> ${tempServiceRecordData.wakeTime}</p>
+      <p><strong>起床時の様子:</strong> ${wakeStateLabel} ${tempServiceRecordData.wakeDetail}</p>
+      <hr/>
+      <p><strong>朝食:</strong> 残量:${tempServiceRecordData.breakfastMealScore}/10 ${tempServiceRecordData.breakfastMealLeft? "残:"+tempServiceRecordData.breakfastMealLeft:""}</p>
+      <p><strong>利用者の様子:</strong> ${tempServiceRecordData.userCondition}</p>
+      <hr/>
+      <p><strong>介助項目:</strong></p>
+      ${showAssist("食事介助", tempServiceRecordData.foodAssistChecked, tempServiceRecordData.foodAssistDetail)}
+      ${showAssist("入浴介助", tempServiceRecordData.bathAssistChecked, tempServiceRecordData.bathAssistDetail)}
+      ${showAssist("排泄介助", tempServiceRecordData.excretionAssistChecked, tempServiceRecordData.excretionAssistDetail)}
+      ${showAssist("着替え介助", tempServiceRecordData.changeAssistChecked, tempServiceRecordData.changeAssistDetail)}
+      ${showAssist("生活支援", tempServiceRecordData.lifeSupportChecked, tempServiceRecordData.lifeSupportDetail)}
+      ${showAssist("メンタルケア", tempServiceRecordData.mentalCareChecked, tempServiceRecordData.mentalCareDetail)}
+      <hr/>
+      ${stgHtml}
     </div>
     <div style="margin-top:10px;">
       <button
@@ -3947,10 +4153,10 @@ function openServiceRecordConfirm(userName) {
         修正
       </button>
       <button
-        style="margin-left:15px; background:#b3dab3; color:#fff; border:none; padding:6px 12px; border-radius:4px;"
-        disabled
+        style="margin-left:15px; background:none; color:#333; border:1px solid #ccc; padding:6px 12px; border-radius:4px;"
+        onclick="goBackToDailyReportBasic()"
       >
-        PDF印刷
+        基本情報入力へ
       </button>
     </div>
   `;
@@ -3958,7 +4164,7 @@ function openServiceRecordConfirm(userName) {
   dc.innerHTML = html;
 }
 
-/** DBへ保存 (managerCheck="off") */
+/** DBへ保存 (managerCheck="off") → 保存後は「基本情報入力へ」 */
 function saveServiceRecordToDB() {
   const recordData = {...tempServiceRecordData};
 
@@ -3969,7 +4175,7 @@ function saveServiceRecordToDB() {
     .then(r=>r.text())
     .then(newId=>{
       alert("サービス提供記録を保存しました (ID:"+newId+")");
-      // PDF印刷 or 一覧リロード等は適宜
+      goBackToDailyReportBasic();
     })
     .catch(err=>{
       alert("保存エラー:"+err);
@@ -3977,21 +4183,43 @@ function saveServiceRecordToDB() {
 }
 
 /********************************************
-  Block #9b: サービス提供記録表示
-   - openServiceRecordDisplay()
-   - fetchServiceRecordsByRange()
-   - renderServiceRecordList()
-   - confirmServiceRecord(recId)
-   - saveServiceRecordManagerCheck(recId)
-   - editServiceRecord(recId)
-   - deleteServiceRecordConfirm(recId, dateStr)
-   - openServiceRecordPdfModal(recId)
-   - closePdfModal()
-   - printPdf()
+  Block #9b: サービス提供記録表示 (一覧検索/管理者確認など)
 ********************************************/
 
+/**
+ * グローバル変数:
+ * ※ Block #9a ですでに「let tempServiceRecordData = {};」を定義している想定。
+ *   ここでは再宣言しない。Block #9a と同じ変数を使う。
+ */
+
+// ヘルパー(帰宅時の様子ラベル)
+function getHomeStateLabel(value) {
+  switch (value) {
+    case "1": return "特に気になることはありません。";
+    case "2": return "少し疲れた様子";
+    case "3": return "体調不良の訴え";
+    case "4": return "不穏な雰囲気";
+    default:  return value || "";
+  }
+}
+
+// ヘルパー(起床時の様子ラベル)
+function getWakeStateLabel(value) {
+  switch (value) {
+    case "1": return "ご自身で起床";
+    case "2": return "声掛けで起床";
+    case "3": return "体調不良の訴え";
+    case "4": return "不穏な雰囲気";
+    case "5": return "その他";
+    default:  return value || "";
+  }
+}
+
+/**
+ * 一覧画面
+ */
 function openServiceRecordDisplay() {
-  // 画面切り替え時に上部へスクロール
+  // 上部へスクロール
   window.scrollTo(0, 0);
 
   const dh = document.getElementById("detail-header");
@@ -4001,8 +4229,8 @@ function openServiceRecordDisplay() {
 
   const td = new Date();
   const yyyy = td.getFullYear();
-  const mm = ("0"+(td.getMonth()+1)).slice(-2);
-  const dd = ("0"+td.getDate()).slice(-2);
+  const mm = ("0" + (td.getMonth() + 1)).slice(-2);
+  const dd = ("0" + td.getDate()).slice(-2);
   const defaultToday = `${yyyy}-${mm}-${dd}`;
 
   let html = `
@@ -4022,9 +4250,9 @@ function openServiceRecordDisplay() {
     <!-- PDFモーダル(サービス提供記録) -->
     <div id="svc-pdf-modal" class="modal" style="display:none;">
       <div class="modal-content">
-        <span class="modal-close" onclick="closePdfModal()">×</span>
+        <span class="modal-close" onclick="closeSvcPdfModal()">×</span>
         <div style="margin-bottom:10px;">
-          <button onclick="printPdf()">印刷</button>
+          <button onclick="printSvcPdf()">印刷</button>
         </div>
         <iframe id="svc-pdf-iframe" style="width:100%; height:600px;"></iframe>
       </div>
@@ -4032,71 +4260,80 @@ function openServiceRecordDisplay() {
   `;
   dc.innerHTML = html;
 
-  // 背景クリックで閉じる
+  // 背景クリックでモーダルを閉じる
   const svcPdfModal = document.getElementById("svc-pdf-modal");
-  if(svcPdfModal){
-    svcPdfModal.addEventListener("click",(evt)=>{
-      if(evt.target.id==="svc-pdf-modal"){
-        closePdfModal();
+  if (svcPdfModal) {
+    svcPdfModal.addEventListener("click", (evt) => {
+      if (evt.target.id === "svc-pdf-modal") {
+        closeSvcPdfModal();
       }
     });
   }
 }
 
+/**
+ * 日付範囲で検索
+ */
 function fetchServiceRecordsByRange() {
   const start = document.getElementById("svc-start").value;
   const end = document.getElementById("svc-end").value;
-  if(!start||!end){
+  if (!start || !end) {
     alert("開始日と終了日を入力してください。");
     return;
   }
   const url = `/api/service_records?start_date=${start}&end_date=${end}`;
   fetch(url)
-    .then(r=>r.json())
-    .then(data=>{
-      if(!data.records){
+    .then(r => r.json())
+    .then(data => {
+      if (!data.records) {
         alert("サービス提供記録がありません。");
         return;
       }
       renderServiceRecordList(data.records);
     })
-    .catch(err=>{
-      alert("エラー:"+err);
+    .catch(err => {
+      alert("エラー:" + err);
     });
 }
 
 /**
- * 一覧に「日付、利用者名、【管理者確認(完了 or 未完了)】 確認/修正/削除/PDF印刷」を表示
+ * 検索結果一覧を表示
  */
 function renderServiceRecordList(recordList) {
   const container = document.getElementById("service-record-result");
-  if(!recordList || recordList.length===0){
+  if (!recordList || recordList.length === 0) {
     container.innerHTML = "<p>該当データなし</p>";
     return;
   }
 
   let html = "";
-  recordList.forEach(rec=>{
-    // skeleton
+  recordList.forEach(rec => {
     html += `
-      <div id="svc-item-${rec.id}" style="margin:6px 0; padding:4px; border-bottom:1px solid #ccc;">
-        <span id="svc-dateUser-${rec.id}" style="font-weight:bold;">${rec.report_date} / (利用者名取得中)</span>
-        <span id="svc-mgrcheck-${rec.id}" style="margin-left:8px; font-weight:bold; color:#999;">(管理者確認:取得中)</span>
+      <div style="margin:6px 0; padding:4px; border-bottom:1px solid #ccc;" id="svc-item-${rec.id}">
+        <span id="svc-dateUser-${rec.id}" style="font-weight:bold;">
+          ${rec.report_date} / (利用者名取得中)
+        </span>
+        <span id="svc-mgrcheck-${rec.id}" style="margin-left:8px; font-weight:bold; color:#999;">
+          (管理者確認:取得中)
+        </span>
         <div style="float:right; display:flex; gap:4px;">
           <button style="background:#007bff; color:#fff; border:none; padding:4px 8px; border-radius:4px;"
-            onclick="confirmServiceRecord(${rec.id})"
-          >確認</button>
-          <button style="background:#ffcc00; color:#333; border:none; padding:4px 8px; border-radius:4px;"
-            onclick="editServiceRecord(${rec.id})"
-          >修正</button>
+            onclick="openServiceRecordManagerConfirm(${rec.id})"
+          >
+            管理者確認
+          </button>
           <button style="background:#cc3333; color:#fff; border:none; padding:4px 8px; border-radius:4px;"
             onclick="deleteServiceRecordConfirm(${rec.id}, '${rec.report_date}')"
-          >削除</button>
+          >
+            削除
+          </button>
           <button id="svc-pdfbtn-${rec.id}"
             style="background:#b3dab3; color:#fff; border:none; padding:4px 8px; border-radius:4px;"
             disabled
             onclick="openServiceRecordPdfModal(${rec.id})"
-          >PDF印刷</button>
+          >
+            PDF印刷
+          </button>
         </div>
         <div style="clear:both;"></div>
       </div>
@@ -4104,39 +4341,42 @@ function renderServiceRecordList(recordList) {
   });
   container.innerHTML = html;
 
-  // 1) managerCheck
-  // 2) userName
-  recordList.forEach(rec=>{
+  // 管理者確認ステータス & ユーザ名を個別に取得
+  recordList.forEach(rec => {
     fetch(`/api/service_record/${rec.id}`)
-      .then(r=>r.json())
-      .then(d=>{
-        if(d.error){
-          document.getElementById(`svc-dateUser-${rec.id}`).innerText = `${rec.report_date} / (エラー)`;
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) {
+          document.getElementById(`svc-dateUser-${rec.id}`).innerText =
+            `${rec.report_date} / (エラー)`;
           document.getElementById(`svc-mgrcheck-${rec.id}`).innerText = "(取得エラー)";
           return;
         }
-        let cObj={};
-        try{ cObj=JSON.parse(d.content_json||"{}"); }catch(e){}
-        const mgrVal = cObj.managerCheck||"off";
-        const mgrSpan = document.getElementById(`svc-mgrcheck-${rec.id}`);
-        const pdfBtn = document.getElementById(`svc-pdfbtn-${rec.id}`);
+        let cObj = {};
+        try {
+          cObj = JSON.parse(d.content_json || "{}");
+        } catch (e) { }
 
-        if(mgrVal==="on"){
+        const mgrVal = cObj.managerCheck || "off";
+        const mgrSpan = document.getElementById(`svc-mgrcheck-${rec.id}`);
+        const pdfBtn  = document.getElementById(`svc-pdfbtn-${rec.id}`);
+
+        if (mgrVal === "on") {
           mgrSpan.innerHTML = "【管理者確認(<span style='color:green;'>完了</span>)】";
-          pdfBtn.disabled=false;
-          pdfBtn.style.background="#00aa00";
-        }else{
+          pdfBtn.disabled = false;
+          pdfBtn.style.background = "#00aa00";
+        } else {
           mgrSpan.innerHTML = "【管理者確認(<span style='color:red;'>未完了</span>)】";
-          pdfBtn.disabled=true;
-          pdfBtn.style.background="#b3dab3";
+          pdfBtn.disabled = true;
+          pdfBtn.style.background = "#b3dab3";
         }
 
-        // user_id => userName取得
+        // user_id -> userName
         const userId = d.user_id;
         fetch(`/api/user/${userId}`)
-          .then(r2=>r2.json())
-          .then(u=>{
-            if(u.error){
+          .then(r2 => r2.json())
+          .then(u => {
+            if (u.error) {
               document.getElementById(`svc-dateUser-${rec.id}`).innerText =
                 `${rec.report_date} / ユーザID:${userId}(取得エラー)`;
               return;
@@ -4145,261 +4385,311 @@ function renderServiceRecordList(recordList) {
             document.getElementById(`svc-dateUser-${rec.id}`).innerText =
               `${d.report_date} / ${userName}`;
           })
-          .catch(err2=>{
+          .catch(err2 => {
             document.getElementById(`svc-dateUser-${rec.id}`).innerText =
               `${rec.report_date} / ユーザID:${userId}(err)`;
           });
       })
-      .catch(err=>{
-        document.getElementById(`svc-dateUser-${rec.id}`).innerText = `${rec.report_date} / (取得エラー)`;
+      .catch(err => {
+        document.getElementById(`svc-dateUser-${rec.id}`).innerText =
+          `${rec.report_date} / (取得エラー)`;
         document.getElementById(`svc-mgrcheck-${rec.id}`).innerText = "(error)";
       });
   });
 }
 
 /**
- * 確認ボタン → サービス提供記録の全項目を表示し、管理者確認のチェック
+ * 管理者確認画面 (枠1～枠7相当を表示)
  */
-function confirmServiceRecord(recId) {
-  // 画面切り替え時に上部へスクロール
+function openServiceRecordManagerConfirm(recId) {
+  // 上部へスクロール
   window.scrollTo(0, 0);
 
   fetch(`/api/service_record/${recId}`)
-    .then(r=>r.json())
-    .then(d=>{
-      if(d.error){
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) {
         alert("該当データがありません。");
         return;
       }
-      let cObj={};
-      try{ cObj=JSON.parse(d.content_json||"{}"); }catch(e){}
-      const mgrVal = cObj.managerCheck||"off";
+      let cObj = {};
+      try {
+        cObj = JSON.parse(d.content_json||"{}");
+      } catch(e) {
+        cObj = {};
+      }
 
       const dh = document.getElementById("detail-header");
       const dc = document.getElementById("detail-content");
-      dh.innerText="サービス提供記録 確認";
+      dh.innerText = "サービス提供記録 管理者確認画面";
 
-      // userName取得して全項目表示
+      // userName取得
       fetch(`/api/user/${d.user_id}`)
-        .then(r2=>r2.json())
-        .then(uobj=>{
-          let userName = uobj.name || ("利用者ID:"+d.user_id);
+        .then(r2 => r2.json())
+        .then(uobj => {
+          const userName = uobj.name || ("利用者ID:"+d.user_id);
 
-          // managerCheck(完了or未完了)
+          // managerCheck
+          const mgrVal = cObj.managerCheck || "off";
           let mgrLabel = (mgrVal==="on")
-            ? `<span style="color:green;font-weight:bold;">完了</span>`
-            : `<span style="color:red;font-weight:bold;">未完了</span>`;
+            ? `<span style="color:red;font-weight:bold;">確認済</span>`
+            : `<span style="color:black;">未完了</span>`;
           let mgrChecked = (mgrVal==="on")?"checked":"";
 
-          // 表示用(昼/夜スタッフ時間など)
-          const staffDayTime   = cObj.day_time   || "";
-          const staffNightTime = cObj.night_time || "";
-          const staffExtraTime = cObj.extra_time || "";
+          // 日付 → M月D日
+          let dateLabel = d.report_date || "";
+          const mm = dateLabel.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if(mm){
+            const m = parseInt(mm[2],10);
+            const dd= parseInt(mm[3],10);
+            dateLabel = `${m}月${dd}日`;
+          }
 
-          // isDaytime
+          // 帰宅/起床
+          const homeLbl = getHomeStateLabel(cObj.homeState||"");
+          const wakeLbl = getWakeStateLabel(cObj.wakeState||"");
+
+          // 日中/追加スタッフ
           const isDaytime = !!d.staff_day;
-
-          // ここでopenServiceRecordConfirmと同等の項目をすべて表示
-          // cObjに格納された各種キーを取り出し、下記HTMLに反映
-          // (例) cObj.dayMealScore, cObj.dayMealLeft, cObj.dinnerTemp, etc.
-
-          // 省略せずすべて表示:
-          // 介助項目や個別支援も含める
-          // "off" or "on" などはラベル表示にしても可
-          // managerCheck は最後にまとめる
-
-          const dayMealScore    = cObj.dayMealScore||"";
-          const dayMealLeft     = cObj.dayMealLeft||"";
-          const dayStatus       = cObj.dayStatus||"";
-          const dinnerTemp      = cObj.dinnerTemp||"";
-          const dinnerSpo2      = cObj.dinnerSpo2||"";
-          const dinnerBP1       = cObj.dinnerBP1||"";
-          const dinnerBP2       = cObj.dinnerBP2||"";
-          const dinnerPulse     = cObj.dinnerPulse||"";
-          const dinnerMealScore = cObj.dinnerMealScore||"";
-          const dinnerMealLeft  = cObj.dinnerMealLeft||"";
-          const check23User     = cObj.check23User||"";
-          const check1User      = cObj.check1User||"";
-          const check3User      = cObj.check3User||"";
-          const wakeTime        = cObj.wakeTime||"";
-          const wakeState       = cObj.wakeState||"";
-          const wakeDetail      = cObj.wakeDetail||"";
-          const breakfastTemp   = cObj.breakfastTemp||"";
-          const breakfastSpo2   = cObj.breakfastSpo2||"";
-          const breakfastBP1    = cObj.breakfastBP1||"";
-          const breakfastBP2    = cObj.breakfastBP2||"";
-          const breakfastPulse  = cObj.breakfastPulse||"";
-          const breakfastMealScore = cObj.breakfastMealScore||"";
-          const breakfastMealLeft  = cObj.breakfastMealLeft||"";
-          const userCondition      = cObj.userCondition||"";
-
-          const daytimeActivity= cObj.daytimeActivity||"";
-          const homeTime       = cObj.homeTime||"";
-          const homeState      = cObj.homeState||"";
-          const homeStateDetail= cObj.homeStateDetail||"";
-          const dayAfterMeds   = cObj.dayAfterMeds||"off";
-          const nightAfterMeds = cObj.nightAfterMeds||"off";
-          const sleepMeds      = cObj.sleepMeds||"off";
-          const sleepTime      = cObj.sleepTime||"";
+          const hasExtra  = !!d.staff_extra;
 
           // 介助
-          const foodAssistChecked   = cObj.foodAssistChecked||"off";
-          const foodAssistDetail    = cObj.foodAssistDetail||"";
-          const bathAssistChecked   = cObj.bathAssistChecked||"off";
-          const bathAssistDetail    = cObj.bathAssistDetail||"";
-          const excretionAssistChecked = cObj.excretionAssistChecked||"off";
-          const excretionAssistDetail  = cObj.excretionAssistDetail||"";
-          const changeAssistChecked    = cObj.changeAssistChecked||"off";
-          const changeAssistDetail     = cObj.changeAssistDetail||"";
-          const lifeSupportChecked     = cObj.lifeSupportChecked||"off";
-          const lifeSupportDetail      = cObj.lifeSupportDetail||"";
-          const mentalCareChecked      = cObj.mentalCareChecked||"off";
-          const mentalCareDetail       = cObj.mentalCareDetail||"";
-
-          // 個別支援
-          const longTermGoalSupport = cObj.longTermGoalSupport||"";
-          const shortTermComments   = cObj.shortTermComments||{};
-
-          let html = `
-            <h2>サービス提供記録 確認 (ID:${d.id})</h2>
-            <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-              <p><strong>日付:</strong> ${d.report_date}</p>
-              <p><strong>利用者:</strong> ${userName}</p>
-              <hr/>
-              ${
-                isDaytime
-                  ? `<p><strong>日中スタッフ:</strong> ${d.staff_day} (${staffDayTime})</p>`
-                  : ``
-              }
-              <p><strong>夜間スタッフ:</strong> ${d.staff_night||""} ${staffNightTime?`(${staffNightTime})`:""}</p>
-              ${
-                d.staff_extra
-                  ? `<p><strong>追加スタッフ:</strong> ${d.staff_extra} ${staffExtraTime?`(${staffExtraTime})`:""}</p>`
-                  : ``
-              }
-              <hr/>
-              <p><strong>昼食:</strong> 残量:${dayMealScore}/10 ${dayMealLeft?`残:${dayMealLeft}`:""}</p>
-              <p><strong>日中の様子:</strong> ${dayStatus}</p>
-              <p><strong>日中活動:</strong> ${daytimeActivity}</p>
-              <p><strong>帰宅時間:</strong> ${homeTime} / 様子:${homeState} ${homeStateDetail}</p>
-              <hr/>
-              <p><strong>夕食バイタル:</strong> 体温:${dinnerTemp}℃ / SpO2:${dinnerSpo2}</p>
-              <p>血圧:${dinnerBP1}/${dinnerBP2}, 脈拍:${dinnerPulse}</p>
-              <p><strong>夕食:</strong> 残量:${dinnerMealScore}/10 ${dinnerMealLeft?`残:${dinnerMealLeft}`:""}</p>
-              <hr/>
-              <p><strong>就寝前服薬:</strong> ${sleepMeds}</p>
-              <p><strong>就寝時間:</strong> ${sleepTime}</p>
-              <hr/>
-              <p><strong>巡視:</strong> ${check23User} / ${check1User} / ${check3User}</p>
-              <hr/>
-              <p><strong>起床時間:</strong> ${wakeTime}</p>
-              <p><strong>起床時の様子:</strong> ${wakeState} ${wakeDetail}</p>
-              <hr/>
-              <p><strong>朝食:</strong> 残量:${breakfastMealScore}/10 ${breakfastMealLeft?`残:${breakfastMealLeft}`:""}</p>
-              <p><strong>利用者の様子:</strong> ${userCondition}</p>
-              <hr/>
-              <p><strong>介助項目:</strong></p>
-              <ul>
-                <li>食事介助: ${foodAssistChecked} ${foodAssistDetail}</li>
-                <li>入浴介助: ${bathAssistChecked} ${bathAssistDetail}</li>
-                <li>排泄介助: ${excretionAssistChecked} ${excretionAssistDetail}</li>
-                <li>着替え介助: ${changeAssistChecked} ${changeAssistDetail}</li>
-                <li>生活支援: ${lifeSupportChecked} ${lifeSupportDetail}</li>
-                <li>メンタルケア: ${mentalCareChecked} ${mentalCareDetail}</li>
-              </ul>
-              <hr/>
-          `;
-          if(longTermGoalSupport){
-            html += `<p><strong>長期目標に対する支援:</strong><br>${longTermGoalSupport}</p><hr/>`;
+          function showAssist(label, chkVal, dtlVal) {
+            if(chkVal==="on"){
+              return `<p>・${label}: ${dtlVal||""}</p>`;
+            }
+            return "";
           }
-          const stKeys = Object.keys(shortTermComments);
-          if(stKeys.length>0){
-            stKeys.forEach(k=>{
-              if(shortTermComments[k]){
-                html += `<p><strong>短期目標${k}のコメント:</strong><br>${shortTermComments[k]}</p><hr/>`;
+
+          // 短期目標
+          let stgHtml = "";
+          if(cObj.shortTermComments){
+            Object.keys(cObj.shortTermComments).forEach(k=>{
+              const v = cObj.shortTermComments[k];
+              if(v){
+                stgHtml += `短期目標${k}に対するコメント: ${v}<br>`;
               }
             });
           }
 
-          // 管理者確認
-          html += `
-            </div>
-            <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-              <h3>管理者確認</h3>
-              <label>
-                <input type="checkbox" id="svcMgrCheck" ${mgrChecked}>
-                管理者確認
-              </label>
-              <p style="margin-top:6px;">現在の状態: ${mgrLabel}</p>
-              <div style="margin-top:10px;">
-                <button
-                  style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px;"
-                  onclick="saveServiceRecordManagerCheck(${d.id})"
-                >
-                  管理者確認を保存
-                </button>
-              </div>
-            </div>
+          // スタッフ表示
+          let staffPart = "";
+          if(isDaytime){
+            staffPart += `<p>日中スタッフ: ${d.staff_day} (勤務:${cObj.day_time||""})</p>`;
+          }
+          staffPart += `<p>夜間スタッフ: ${d.staff_night||""} (勤務:${cObj.night_time||""})</p>`;
+          if(hasExtra){
+            staffPart += `<p>追加スタッフ: ${d.staff_extra||""} (勤務:${cObj.extra_time||""})</p>`;
+          }
+
+          // 昼食（isDaytime時のみ）
+          let lunchPart = "";
+          if(isDaytime){
+            const sc = cObj.dayMealScore||"";
+            if(sc){
+              lunchPart += `<p><strong>昼食:</strong> 残量:${sc}/10`;
+              if(cObj.dayMealLeft) lunchPart += ` 残:${cObj.dayMealLeft}`;
+              lunchPart += `</p>`;
+            }
+            if(cObj.dayStatus){
+              lunchPart += `<p>日中の様子: ${cObj.dayStatus}</p>`;
+            }
+          }
+
+          // 夕食後服薬
+          let dinnerMeds = "";
+          if(cObj.nightAfterMeds==="on"){
+            dinnerMeds = `<p><strong>夕食後服薬:</strong> <strong>服薬確認</strong></p>`;
+          }
+          // 就寝前服薬
+          let sleepMeds = "";
+          if(cObj.sleepMeds==="on"){
+            sleepMeds = `<p><strong>就寝前服薬:</strong> <strong>服薬確認</strong></p>`;
+          }
+          // 朝食後服薬
+          let morningMeds = "";
+          if(cObj.morningAfterMeds==="on"){
+            morningMeds = `<p><strong>朝食後服薬:</strong> <strong>服薬確認</strong></p>`;
+          }
+
+          // 介助リスト
+          let assistHtml = "";
+          assistHtml += showAssist("食事介助", cObj.foodAssistChecked, cObj.foodAssistDetail);
+          assistHtml += showAssist("入浴介助", cObj.bathAssistChecked, cObj.bathAssistDetail);
+          assistHtml += showAssist("排泄介助", cObj.excretionAssistChecked, cObj.excretionAssistDetail);
+          assistHtml += showAssist("着替えの介助", cObj.changeAssistChecked, cObj.changeAssistDetail);
+          assistHtml += showAssist("生活支援", cObj.lifeSupportChecked, cObj.lifeSupportDetail);
+          assistHtml += showAssist("メンタルケア", cObj.mentalCareChecked, cObj.mentalCareDetail);
+
+          // 管理者確認チェックボックス
+          let managerCheckHtml = `
+            <label>
+              <input type="checkbox" id="svcMgrCheck" ${mgrChecked}>
+              管理者確認
+            </label>
+            <p>現在の状態: ${mgrLabel}</p>
             <div style="margin-top:10px;">
-              <button onclick="openServiceRecordDisplay()">一覧へ戻る</button>
+              <button
+                style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px;"
+                onclick="saveServiceRecordManagerCheck(${d.id})"
+              >
+                管理者確認を更新
+              </button>
+            </div>
+          `;
+
+          // HTML組み立て
+          let html = `
+            <h2>サービス提供記録 管理者確認 (ID:${d.id})</h2>
+            <div style="border:1px solid #ccc; padding:10px;">
+              <p>利用者: ${userName}</p>
+              <p>記録日: <strong>${dateLabel}</strong></p>
+              <p><strong>支援スタッフ</strong><br>
+                ${staffPart}
+              </p>
+              <hr/>
+              <p><strong>献立</strong><br>
+                ${
+                  isDaytime
+                    ? `昼食の献立: ${d.lunch_menu||""}<br>`
+                    : ""
+                }
+                夕食の献立: ${d.dinner_menu||""}<br>
+                朝食の献立: ${d.breakfast_menu||""}
+              </p>
+              <hr/>
+              <p><strong>詳細支援報告</strong></p>
+              ${lunchPart}
+              <p>日中活動: ${cObj.daytimeActivity||""}</p>
+              <p>帰宅時間: ${cObj.homeTime||""} / 様子: ${homeLbl} ${cObj.homeStateDetail||""}</p>
+              <hr/>
+              <p>夕食バイタル: 体温:${cObj.dinnerTemp||""}℃ / SpO2:${cObj.dinnerSpo2||""},
+                 血圧:${cObj.dinnerBP1||""}/${cObj.dinnerBP2||""}, 脈:${cObj.dinnerPulse||""}</p>
+              <p>夕食: 残量:${cObj.dinnerMealScore||""}/10 ${
+                cObj.dinnerMealLeft
+                  ? "残:"+cObj.dinnerMealLeft
+                  : ""
+              }</p>
+              ${dinnerMeds}
+              <hr/>
+              <p><strong>就寝・巡視</strong></p>
+              ${sleepMeds}
+              <p>就寝時間: ${cObj.sleepTime||""}</p>
+              <p>夜間巡視:</p>
+              <p>&emsp;${cObj.check23User||""}</p>
+              <p>&emsp;${cObj.check1User||""}</p>
+              <p>&emsp;${cObj.check3User||""}</p>
+              <hr/>
+              <p><strong>起床、朝食</strong></p>
+              <p>起床時間: ${cObj.wakeTime||""}</p>
+              <p>起床時の様子: ${wakeLbl} ${cObj.wakeDetail||""}</p>
+              <p>朝食バイタル: 体温:${cObj.breakfastTemp||""}℃ /
+                SpO2:${cObj.breakfastSpo2||""},
+                血圧:${cObj.breakfastBP1||""}/${cObj.breakfastBP2||""},
+                脈:${cObj.breakfastPulse||""}
+              </p>
+              <p>朝食: 残量:${cObj.breakfastMealScore||""}/10 ${
+                cObj.breakfastMealLeft
+                  ? "残:"+cObj.breakfastMealLeft
+                  : ""
+              }</p>
+              ${morningMeds}
+              <hr/>
+              <p><strong>利用者の支援詳細</strong></p>
+              <p>利用者の様子: ${cObj.userCondition||""}</p>
+              ${
+                assistHtml
+                  ? `<p><strong>介助項目</strong></p>${assistHtml}`
+                  : ""
+              }
+              <hr/>
+              <p><strong>個別支援</strong></p>
+              <p>長期目標に対する支援: ${cObj.longTermGoalSupport||""}</p>
+              ${stgHtml?`<p>${stgHtml}</p>`:""}
+              <hr/>
+              <p><strong>管理者確認</strong></p>
+              ${managerCheckHtml}
+            </div>
+
+            <div style="margin-top:10px;">
+              <button
+                style="background:#ffcc00; color:#333; border:none; padding:6px 12px; border-radius:4px;"
+                onclick="openServiceRecordManagerEdit(${d.id})"
+              >
+                修正
+              </button>
+              <button
+                style="margin-left:15px; background:none; color:#333; border:1px solid #ccc; padding:6px 12px; border-radius:4px;"
+                onclick="returnToServiceRecordList()"
+              >
+                一覧に戻る
+              </button>
             </div>
           `;
           dc.innerHTML = html;
         })
-        .catch(e2=>{
-          alert("利用者名取得失敗: "+e2);
+        .catch(e2 => {
+          alert("ユーザ名取得失敗:" + e2);
         });
     })
-    .catch(err=>{
-      alert("エラー:"+err);
+    .catch(err => {
+      alert("エラー:" + err);
     });
 }
 
+/**
+ * 管理者確認の更新
+ */
 function saveServiceRecordManagerCheck(recId) {
   const checked = document.getElementById("svcMgrCheck").checked;
   fetch(`/api/service_record/${recId}`)
-    .then(r=>r.json())
-    .then(d=>{
-      if(d.error){
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) {
         alert("該当記録なし");
         return;
       }
-      let cObj={};
-      try{ cObj=JSON.parse(d.content_json||"{}");}catch(e){}
-      cObj.managerCheck = checked ? "on":"off";
+      let cObj = {};
+      try { cObj = JSON.parse(d.content_json||"{}"); }catch(e){}
+      cObj.managerCheck = (checked ? "on":"off");
 
       // DB保存
-      const finalObj={
+      const finalObj = {
         ...cObj,
-        userId:d.user_id,
-        dateValue:d.report_date,
-        staffDay:d.staff_day||"",
-        staffNight:d.staff_night||"",
-        staffExtra:d.staff_extra||"",
-        lunchMenu:d.lunch_menu||"",
-        dinnerMenu:d.dinner_menu||"",
-        breakfastMenu:d.breakfast_menu||""
+        userId: d.user_id,
+        dateValue: d.report_date,
+        staffDay: d.staff_day||"",
+        staffNight: d.staff_night||"",
+        staffExtra: d.staff_extra||"",
+        lunchMenu: d.lunch_menu||"",
+        dinnerMenu: d.dinner_menu||"",
+        breakfastMenu: d.breakfast_menu||""
       };
       const fd = new FormData();
       fd.append("service_record_json", JSON.stringify(finalObj));
       fetch("/save_service_record", {method:"POST", body:fd})
         .then(r2=>r2.text())
         .then(res=>{
-          alert("管理者確認を保存しました。");
-          confirmServiceRecord(recId);
+          alert("管理者確認を更新しました。");
+          openServiceRecordManagerConfirm(recId);
         })
-        .catch(err2=> alert("保存エラー:"+err2));
+        .catch(err2=> alert("保存エラー:" + err2));
     })
-    .catch(e=> alert("エラー:"+e));
+    .catch(e => {
+      alert("エラー:" + e);
+    });
 }
 
 /**
- * 修正ボタン → 入力済の画面へ戻る
+ * 管理者修正画面
+ *  - ベースはサービス提供記録作成画面と同じだが、下段のボタンが違う
+ *  - 内容は必ず入力済(= tempServiceRecordDataからすべての項目を反映)
  */
-function editServiceRecord(recId) {
-  // 画面切り替え時に上部へスクロール
+function openServiceRecordManagerEdit(recId) {
+  // 上部へスクロール
   window.scrollTo(0, 0);
 
+  // DBから再取得し、tempServiceRecordDataに詰め直す
   fetch(`/api/service_record/${recId}`)
     .then(r=>r.json())
     .then(d=>{
@@ -4407,147 +4697,664 @@ function editServiceRecord(recId) {
         alert("エラー:記録なし");
         return;
       }
-      let cObj={};
-      try{ cObj=JSON.parse(d.content_json||"{}");}catch(e){}
+      let cObj = {};
+      try{ cObj = JSON.parse(d.content_json||"{}"); }catch(e){ cObj={}; }
 
-      // userName取得
+      // user名取得
       fetch(`/api/user/${d.user_id}`)
         .then(r2=>r2.json())
         .then(u=>{
-          const userName = u.name || (`利用者${d.user_id}`);
+          const userName = u.name || ("利用者ID:"+d.user_id);
 
-          // tempServiceRecordData
-          tempServiceRecordData={
-            userId:d.user_id||"",
+          // tempServiceRecordDataに全項目を格納
+          // (Block #9aの "openServiceRecordUser" でやっているのと同様)
+          tempServiceRecordData = {
+            userId: d.user_id||"",
             userName,
-            dateValue:d.report_date||"",
+            dateValue: d.report_date||"",
             isDaytime: !!d.staff_day,
             hasExtraStaff: !!d.staff_extra,
-            staffDay:d.staff_day||"",
-            staffNight:d.staff_night||"",
-            staffExtra:d.staff_extra||"",
-            staffDayTime:cObj.day_time||"",
-            staffNightTime:cObj.night_time||"",
-            staffExtraTime:cObj.extra_time||"",
-            lunchMenu:d.lunch_menu||"",
-            dinnerMenu:d.dinner_menu||"",
-            breakfastMenu:d.breakfast_menu||"",
-            check23:cObj.check23||"",
-            check1:cObj.check1||"",
-            check3:cObj.check3||"",
-            // 以下、詳細項目も可能なら再代入
+
+            staffDay: d.staff_day||"",
+            staffNight: d.staff_night||"",
+            staffExtra: d.staff_extra||"",
+            staffDayTime: cObj.day_time||"",
+            staffNightTime: cObj.night_time||"",
+            staffExtraTime: cObj.extra_time||"",
+
+            lunchMenu: d.lunch_menu||"",
+            dinnerMenu: d.dinner_menu||"",
+            breakfastMenu: d.breakfast_menu||"",
+
+            check23: cObj.check23||"",
+            check1: cObj.check1||"",
+            check3: cObj.check3||"",
+
+            daytimeActivity: cObj.daytimeActivity||"",
+            homeTime: cObj.homeTime||"",
+            homeState: cObj.homeState||"",
+            homeStateDetail: cObj.homeStateDetail||"",
+
+            dayMealScore: cObj.dayMealScore||"",
+            dayMealLeft: cObj.dayMealLeft||"",
+            dayAfterMeds: cObj.dayAfterMeds||"off",
+            dayStatus: cObj.dayStatus||"",
+
+            dinnerTemp: cObj.dinnerTemp||"",
+            dinnerSpo2: cObj.dinnerSpo2||"",
+            dinnerBP1: cObj.dinnerBP1||"",
+            dinnerBP2: cObj.dinnerBP2||"",
+            dinnerPulse: cObj.dinnerPulse||"",
+            dinnerMealScore: cObj.dinnerMealScore||"",
+            dinnerMealLeft: cObj.dinnerMealLeft||"",
+            nightAfterMeds: cObj.nightAfterMeds||"off",
+
+            sleepMeds: cObj.sleepMeds||"off",
+            sleepTime: cObj.sleepTime||"",
+
+            check23User: cObj.check23User||"",
+            check1User: cObj.check1User||"",
+            check3User: cObj.check3User||"",
+
+            wakeTime: cObj.wakeTime||"",
+            wakeState: cObj.wakeState||"",
+            wakeDetail: cObj.wakeDetail||"",
+
+            breakfastTemp: cObj.breakfastTemp||"",
+            breakfastSpo2: cObj.breakfastSpo2||"",
+            breakfastBP1: cObj.breakfastBP1||"",
+            breakfastBP2: cObj.breakfastBP2||"",
+            breakfastPulse: cObj.breakfastPulse||"",
+            breakfastMealScore: cObj.breakfastMealScore||"",
+            breakfastMealLeft: cObj.breakfastMealLeft||"",
+            morningAfterMeds: cObj.morningAfterMeds||"off",
+            userCondition: cObj.userCondition||"",
+
+            foodAssistChecked: cObj.foodAssistChecked||"off",
+            foodAssistDetail: cObj.foodAssistDetail||"",
+            bathAssistChecked: cObj.bathAssistChecked||"off",
+            bathAssistDetail: cObj.bathAssistDetail||"",
+            excretionAssistChecked: cObj.excretionAssistChecked||"off",
+            excretionAssistDetail: cObj.excretionAssistDetail||"",
+            changeAssistChecked: cObj.changeAssistChecked||"off",
+            changeAssistDetail: cObj.changeAssistDetail||"",
+            lifeSupportChecked: cObj.lifeSupportChecked||"off",
+            lifeSupportDetail: cObj.lifeSupportDetail||"",
+            mentalCareChecked: cObj.mentalCareChecked||"off",
+            mentalCareDetail: cObj.mentalCareDetail||"",
+
+            longTermGoalSupport: cObj.longTermGoalSupport||"",
+            shortTermComments: cObj.shortTermComments||{},
+            managerCheck: cObj.managerCheck||"off"
           };
-          // 以降 detail data(例: cObj.dayMealScore etc) も tempに持たせるなら下記のように
-          // ここでは最小限にしておく
-          // ... ただしフル実装するには openServiceRecordUser() の2画面目にも埋め込む必要あり
-          // そのため はしょらずに:
 
-          tempServiceRecordData.daytimeActivity  = cObj.daytimeActivity||"";
-          tempServiceRecordData.homeTime         = cObj.homeTime||"";
-          tempServiceRecordData.homeState        = cObj.homeState||"";
-          tempServiceRecordData.homeStateDetail  = cObj.homeStateDetail||"";
-          tempServiceRecordData.dayMealScore     = cObj.dayMealScore||"";
-          tempServiceRecordData.dayMealLeft      = cObj.dayMealLeft||"";
-          tempServiceRecordData.dayAfterMeds     = cObj.dayAfterMeds||"off";
-          tempServiceRecordData.dayStatus        = cObj.dayStatus||"";
-          tempServiceRecordData.dinnerTemp       = cObj.dinnerTemp||"";
-          tempServiceRecordData.dinnerSpo2       = cObj.dinnerSpo2||"";
-          tempServiceRecordData.dinnerBP1        = cObj.dinnerBP1||"";
-          tempServiceRecordData.dinnerBP2        = cObj.dinnerBP2||"";
-          tempServiceRecordData.dinnerPulse      = cObj.dinnerPulse||"";
-          tempServiceRecordData.dinnerMealScore  = cObj.dinnerMealScore||"";
-          tempServiceRecordData.dinnerMealLeft   = cObj.dinnerMealLeft||"";
-          tempServiceRecordData.nightAfterMeds   = cObj.nightAfterMeds||"off";
-          tempServiceRecordData.sleepMeds        = cObj.sleepMeds||"off";
-          tempServiceRecordData.sleepTime        = cObj.sleepTime||"";
-          tempServiceRecordData.check23User      = cObj.check23User||"";
-          tempServiceRecordData.check1User       = cObj.check1User||"";
-          tempServiceRecordData.check3User       = cObj.check3User||"";
-          tempServiceRecordData.wakeTime         = cObj.wakeTime||"";
-          tempServiceRecordData.wakeState        = cObj.wakeState||"";
-          tempServiceRecordData.wakeDetail       = cObj.wakeDetail||"";
-          tempServiceRecordData.breakfastTemp    = cObj.breakfastTemp||"";
-          tempServiceRecordData.breakfastSpo2    = cObj.breakfastSpo2||"";
-          tempServiceRecordData.breakfastBP1     = cObj.breakfastBP1||"";
-          tempServiceRecordData.breakfastBP2     = cObj.breakfastBP2||"";
-          tempServiceRecordData.breakfastPulse   = cObj.breakfastPulse||"";
-          tempServiceRecordData.breakfastMealScore = cObj.breakfastMealScore||"";
-          tempServiceRecordData.breakfastMealLeft  = cObj.breakfastMealLeft||"";
-          tempServiceRecordData.morningAfterMeds   = cObj.morningAfterMeds||"off";
-          tempServiceRecordData.userCondition      = cObj.userCondition||"";
-
-          // 介助
-          tempServiceRecordData.foodAssistChecked = cObj.foodAssistChecked||"off";
-          tempServiceRecordData.foodAssistDetail  = cObj.foodAssistDetail||"";
-          tempServiceRecordData.bathAssistChecked = cObj.bathAssistChecked||"off";
-          tempServiceRecordData.bathAssistDetail  = cObj.bathAssistDetail||"";
-          tempServiceRecordData.excretionAssistChecked = cObj.excretionAssistChecked||"off";
-          tempServiceRecordData.excretionAssistDetail  = cObj.excretionAssistDetail||"";
-          tempServiceRecordData.changeAssistChecked    = cObj.changeAssistChecked||"off";
-          tempServiceRecordData.changeAssistDetail     = cObj.changeAssistDetail||"";
-          tempServiceRecordData.lifeSupportChecked     = cObj.lifeSupportChecked||"off";
-          tempServiceRecordData.lifeSupportDetail      = cObj.lifeSupportDetail||"";
-          tempServiceRecordData.mentalCareChecked      = cObj.mentalCareChecked||"off";
-          tempServiceRecordData.mentalCareDetail       = cObj.mentalCareDetail||"";
-
-          tempServiceRecordData.longTermGoalSupport    = cObj.longTermGoalSupport||"";
-          tempServiceRecordData.shortTermComments      = cObj.shortTermComments||{};
-          tempServiceRecordData.managerCheck           = cObj.managerCheck||"off";
-
-          // openServiceRecordUser
-          openServiceRecordUser(tempServiceRecordData.userId, userName);
+          // 次の画面を描画
+          openServiceRecordManagerEditForm(recId, userName);
         })
         .catch(e2=>{
-          alert("ユーザ名取得エラー:"+e2);
+          alert("ユーザ名取得エラー:"+ e2);
         });
     })
-    .catch(err=> alert("エラー:"+err));
+    .catch(err=>{
+      alert("エラー:"+ err);
+    });
 }
 
-/** 削除 */
-function deleteServiceRecordConfirm(recId, dateStr) {
-  let label=dateStr;
-  if(dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)){
-    const [_,y,m,d]=dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    label=`${parseInt(m,10)}月${parseInt(d,10)}日`;
+/**
+ * 管理者修正画面フォーム
+ * - ベースはサービス提供記録作成画面と同じ
+ * - 下段のボタンが違う:
+ *   「管理者確認(青)」-> openServiceRecordManagerConfirm(recId)
+ *   「一覧に戻る(配色なし)」-> returnToServiceRecordList()
+ * - 必ず入力済み内容をフォームに反映
+ */
+function openServiceRecordManagerEditForm(recId, userName) {
+  // 上部へスクロール
+  window.scrollTo(0, 0);
+
+  const dh = document.getElementById("detail-header");
+  const dc = document.getElementById("detail-content");
+  dh.innerText = "サービス提供記録 管理者修正画面";
+
+  const d = tempServiceRecordData; // ショートハンド
+
+  // same approach as openServiceRecordUser, but pre-filled
+  let dayDisabledAttr   = d.isDaytime ? "checked" : "";
+  let extraDisabledAttr = d.hasExtraStaff ? "checked" : "";
+
+  // メニューなど
+  const staffDayPart = d.isDaytime
+    ? `<div style="margin:4px 0;">
+         <strong>(日中)スタッフ名:</strong> ${d.staffDay||""}
+       </div>
+       <div style="margin:4px 0;">
+         <strong>勤務時間:</strong> ${d.staffDayTime||""}
+       </div>`
+    : "";
+
+  const staffExtraPart = d.hasExtraStaff
+    ? `<div style="margin:4px 0;">
+         <strong>(追加)スタッフ名:</strong> ${d.staffExtra||""}
+       </div>
+       <div style="margin:4px 0;">
+         <strong>勤務時間:</strong> ${d.staffExtraTime||""}
+       </div>`
+    : "";
+
+  // ラジオやチェックボックス,セレクトなどは動的にselected/checkedを付ける
+  // ここでは簡易にHTMLを組み立て
+
+  function buildScoreOptions(val) {
+    let out = "";
+    for(let i=1; i<=10; i++){
+      const sel = (String(i)===String(val)) ? "selected":"";
+      out += `<option value="${i}" ${sel}>${i}</option>`;
+    }
+    return out;
   }
-  const ok=confirm(`${label}のサービス提供記録を削除しますか？元に戻せません`);
-  if(!ok)return;
-  const fd=new FormData();
-  fd.append("id",recId);
-  fetch("/delete_service_record", {method:"POST",body:fd})
+  function checkAttr(isOn){ return (isOn==="on") ? "checked":""; }
+
+  let lunchBlock = "";
+  if(d.isDaytime){
+    lunchBlock = `
+    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+      <h4>昼食</h4>
+      <p><strong>昼食の献立:</strong></p>
+      <input type="text" id="mgr-lunchMenu" size="40" value="${d.lunchMenu||""}"><br>
+      <p>
+        <label>食事状況:</label>
+        <select id="mgr-dayMealScore">${buildScoreOptions(d.dayMealScore||"")}</select>/10
+      </p>
+      <p>
+        <label>残した食事:</label>
+        <input type="text" id="mgr-dayMealLeft" size="30" value="${d.dayMealLeft||""}">
+      </p>
+      <p>
+        <label>昼食後服薬</label>
+        <input type="checkbox" id="mgr-dayAfterMeds" ${checkAttr(d.dayAfterMeds)}>
+      </p>
+      <p>
+        <label>日中の様子:</label><br>
+        <textarea id="mgr-dayStatus" rows="2" style="width:100%;">${d.dayStatus||""}</textarea>
+      </p>
+    </div>`;
+  }
+
+  let dinnerBlock = `
+    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+      <h4>夕食</h4>
+      <p><strong>夕食の献立:</strong></p>
+      <input type="text" id="mgr-dinnerMenu" size="40" value="${d.dinnerMenu||""}"><br>
+      <p>
+        <label>体温:</label>
+        <input type="text" id="mgr-dinnerTemp" size="5" value="${d.dinnerTemp||""}">℃
+        <label>SpO2:</label>
+        <input type="text" id="mgr-dinnerSpo2" size="5" value="${d.dinnerSpo2||""}">
+      </p>
+      <p>
+        血圧 <input type="text" id="mgr-dinnerBP1" size="3" value="${d.dinnerBP1||""}">
+        / <input type="text" id="mgr-dinnerBP2" size="3" value="${d.dinnerBP2||""}">
+        <label>脈:</label>
+        <input type="text" id="mgr-dinnerPulse" size="3" value="${d.dinnerPulse||""}">
+      </p>
+      <p>
+        <label>食事状況:</label>
+        <select id="mgr-dinnerMealScore">${buildScoreOptions(d.dinnerMealScore||"")}</select>/10
+      </p>
+      <p>
+        <label>残した食事:</label>
+        <input type="text" id="mgr-dinnerMealLeft" size="30" value="${d.dinnerMealLeft||""}">
+      </p>
+      <p>
+        <label>夕食後服薬</label>
+        <input type="checkbox" id="mgr-nightAfterMeds" ${checkAttr(d.nightAfterMeds)}>
+      </p>
+    </div>
+  `;
+
+  // 以下、就寝、夜間巡視、起床、朝食 なども
+  // ここでは省略しないで全て書く(要望による)
+  let html = `
+  <h2>サービス提供記録 管理者修正画面 (ID:${recId})</h2>
+  <div style="border:1px solid #ccc; padding:10px;">
+    <p><strong>利用者:</strong> ${userName}</p>
+    <p><strong>記録日:</strong> ${d.dateValue||""}</p>
+
+    <p>
+      <label>日中あり:</label>
+      <input type="checkbox" id="mgr-daytimeCheck" ${dayDisabledAttr} disabled>
+      <label style="margin-left:10px;">追加スタッフあり:</label>
+      <input type="checkbox" id="mgr-extraStaffCheck" ${extraDisabledAttr} disabled>
+    </p>
+
+    ${staffDayPart}
+    <div style="margin:4px 0;">
+      <strong>(夜間)スタッフ名:</strong> ${d.staffNight||""} (勤務:${d.staffNightTime||""})
+    </div>
+    ${staffExtraPart}
+  </div>
+
+  ${lunchBlock}
+
+  <div class="report-subtitle" style="margin-top:10px;">日中活動～帰宅</div>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <p>
+      <label>日中活動:</label>
+      <input type="text" id="mgr-daytimeActivity" value="${d.daytimeActivity||""}" style="width:200px;">
+    </p>
+    <p>
+      <label>帰宅時間:</label>
+      <input type="time" id="mgr-homeTime" value="${d.homeTime||""}">
+    </p>
+    <p>
+      <label>帰宅時の様子:</label>
+      <select id="mgr-homeState">
+        <option value="">選択なし</option>
+        <option value="1" ${d.homeState==="1"?"selected":""}>1.特に気になることはありません。</option>
+        <option value="2" ${d.homeState==="2"?"selected":""}>2.少し疲れた様子</option>
+        <option value="3" ${d.homeState==="3"?"selected":""}>3.体調不良の訴え</option>
+        <option value="4" ${d.homeState==="4"?"selected":""}>4.不穏な雰囲気</option>
+      </select>
+    </p>
+    <p>
+      <label>詳細入力:</label>
+      <input type="text" id="mgr-homeStateDetail" size="30" value="${d.homeStateDetail||""}">
+    </p>
+  </div>
+
+  ${dinnerBlock}
+
+  <div class="report-subtitle">就寝</div>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <p>
+      <label>就寝前服薬</label>
+      <input type="checkbox" id="mgr-sleepMeds" ${checkAttr(d.sleepMeds)}>
+    </p>
+    <p>
+      <label>就寝時間:</label>
+      <input type="time" id="mgr-sleepTime" value="${d.sleepTime||""}">
+    </p>
+  </div>
+
+  <div class="report-subtitle">夜間巡視</div>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <p>
+      <label>巡視1:</label>
+      <input type="text" id="mgr-check23User" size="30" value="${d.check23User||""}">
+    </p>
+    <p>
+      <label>巡視2:</label>
+      <input type="text" id="mgr-check1User" size="30" value="${d.check1User||""}">
+    </p>
+    <p>
+      <label>巡視3:</label>
+      <input type="text" id="mgr-check3User" size="30" value="${d.check3User||""}">
+    </p>
+  </div>
+
+  <div class="report-subtitle">起床</div>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <p>
+      <label>起床時間:</label>
+      <input type="time" id="mgr-wakeTime" value="${d.wakeTime||""}">
+    </p>
+    <p>
+      <label>起床時の様子:</label>
+      <select id="mgr-wakeState">
+        <option value="">選択なし</option>
+        <option value="1" ${d.wakeState==="1"?"selected":""}>1.ご自身で起床</option>
+        <option value="2" ${d.wakeState==="2"?"selected":""}>2.声掛けで起床</option>
+        <option value="3" ${d.wakeState==="3"?"selected":""}>3.体調不良の訴え</option>
+        <option value="4" ${d.wakeState==="4"?"selected":""}>4.不穏な雰囲気</option>
+        <option value="5" ${d.wakeState==="5"?"selected":""}>5.その他</option>
+      </select>
+    </p>
+    <p>
+      <label>詳細入力:</label>
+      <input type="text" id="mgr-wakeDetail" size="30" value="${d.wakeDetail||""}">
+    </p>
+  </div>
+
+  <div class="report-subtitle">朝食</div>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <p>
+      <label>体温:</label>
+      <input type="text" id="mgr-breakfastTemp" size="5" value="${d.breakfastTemp||""}">℃
+      <label>SpO2:</label>
+      <input type="text" id="mgr-breakfastSpo2" size="5" value="${d.breakfastSpo2||""}">
+    </p>
+    <p>
+      <label>血圧:</label>
+      <input type="text" id="mgr-breakfastBP1" size="3" value="${d.breakfastBP1||""}">
+      /
+      <input type="text" id="mgr-breakfastBP2" size="3" value="${d.breakfastBP2||""}">
+      <label>脈:</label>
+      <input type="text" id="mgr-breakfastPulse" size="3" value="${d.breakfastPulse||""}">
+    </p>
+    <p><strong>献立:</strong></p>
+    <input type="text" id="mgr-breakfastMenu" size="40" value="${d.breakfastMenu||""}"><br>
+    <p>
+      <label>食事状況:</label>
+      <select id="mgr-breakfastMealScore">${buildScoreOptions(d.breakfastMealScore||"")}</select>/10
+    </p>
+    <p>
+      <label>残した食事:</label>
+      <input type="text" id="mgr-breakfastMealLeft" size="30" value="${d.breakfastMealLeft||""}">
+    </p>
+    <p>
+      <label>朝食後服薬</label>
+      <input type="checkbox" id="mgr-morningAfterMeds" ${checkAttr(d.morningAfterMeds)}>
+    </p>
+  </div>
+
+  <div class="report-subtitle">利用者の様子</div>
+  <textarea id="mgr-userCondition" rows="3" style="width:100%;">${d.userCondition||""}</textarea>
+
+  <div class="report-subtitle" style="margin-top:10px;">その他介助項目</div>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <p>
+      <label><input type="checkbox" id="mgr-foodAssistCheck" ${checkAttr(d.foodAssistChecked)}>食事介助</label>
+      <span style="margin-left:10px;">
+        <label>詳細:</label>
+        <input type="text" id="mgr-foodAssistDetail" size="30" value="${d.foodAssistDetail||""}">
+      </span>
+    </p>
+    <p>
+      <label><input type="checkbox" id="mgr-bathAssistCheck" ${checkAttr(d.bathAssistChecked)}>入浴介助</label>
+      <span style="margin-left:10px;">
+        <label>詳細:</label>
+        <input type="text" id="mgr-bathAssistDetail" size="30" value="${d.bathAssistDetail||""}">
+      </span>
+    </p>
+    <p>
+      <label><input type="checkbox" id="mgr-excretionAssistCheck" ${checkAttr(d.excretionAssistChecked)}>排泄介助</label>
+      <span style="margin-left:10px;">
+        <label>詳細:</label>
+        <input type="text" id="mgr-excretionAssistDetail" size="30" value="${d.excretionAssistDetail||""}">
+      </span>
+    </p>
+    <p>
+      <label><input type="checkbox" id="mgr-changeAssistCheck" ${checkAttr(d.changeAssistChecked)}>着替えの介助</label>
+      <span style="margin-left:10px;">
+        <label>詳細:</label>
+        <input type="text" id="mgr-changeAssistDetail" size="30" value="${d.changeAssistDetail||""}">
+      </span>
+    </p>
+    <p>
+      <label><input type="checkbox" id="mgr-lifeSupportCheck" ${checkAttr(d.lifeSupportChecked)}>生活支援</label>
+      <span style="margin-left:10px;">
+        <label>詳細:</label>
+        <input type="text" id="mgr-lifeSupportDetail" size="30" value="${d.lifeSupportDetail||""}">
+      </span>
+    </p>
+    <p>
+      <label><input type="checkbox" id="mgr-mentalCareCheck" ${checkAttr(d.mentalCareChecked)}>メンタルケア</label>
+      <span style="margin-left:10px;">
+        <label>詳細:</label>
+        <input type="text" id="mgr-mentalCareDetail" size="30" value="${d.mentalCareDetail||""}">
+      </span>
+    </p>
+  </div>
+
+  <div class="report-subtitle">個別支援</div>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <p><strong>長期目標に対する支援:</strong></p>
+    <textarea id="mgr-longTermGoalSupport" rows="2" style="width:100%;">${d.longTermGoalSupport||""}</textarea>
+    <hr/>
+    <p>短期目標コメント(最大5):</p>
+  `;
+
+  // 短期目標
+  if(d.shortTermComments){
+    const keys = Object.keys(d.shortTermComments).sort((a,b)=>(+a)-(+b));
+    keys.forEach(k=>{
+      html += `
+        <p>短期目標${k}:</p>
+        <textarea id="mgr-shortTermComment${k}" rows="2" style="width:100%;">${d.shortTermComments[k]||""}</textarea>
+        <hr/>
+      `;
+    });
+  } else {
+    html += `<p>短期目標なし</p>`;
+  }
+
+  // ボタン
+  html += `
+  </div>
+
+  <div style="margin-top:10px;">
+    <button
+      style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px;"
+      onclick="saveServiceRecordManagerEdit(${recId})"
+    >
+      管理者確認
+    </button>
+    <button
+      style="margin-left:15px; background:none; color:#333; border:1px solid #ccc; padding:6px 12px; border-radius:4px;"
+      onclick="returnToServiceRecordList()"
+    >
+      一覧に戻る
+    </button>
+  </div>
+  `;
+
+  dc.innerHTML = html;
+}
+
+/**
+ * 管理者修正内容を保存→管理者確認画面へ
+ */
+function saveServiceRecordManagerEdit(recId) {
+  // 画面切り替え時に上部へスクロール
+  window.scrollTo(0,0);
+
+  // フォームから取り直し
+  const d = {...tempServiceRecordData};
+
+  // 例: 昼食
+  const lunchEl = document.getElementById("mgr-lunchMenu");
+  if(lunchEl) d.lunchMenu = lunchEl.value || "";
+  const dmsEl  = document.getElementById("mgr-dayMealScore");
+  if(dmsEl) d.dayMealScore = dmsEl.value||"";
+  const dmlEl  = document.getElementById("mgr-dayMealLeft");
+  if(dmlEl) d.dayMealLeft = dmlEl.value||"";
+  const dayAEl = document.getElementById("mgr-dayAfterMeds");
+  if(dayAEl) d.dayAfterMeds = dayAEl.checked ? "on":"off";
+  const dayStEl= document.getElementById("mgr-dayStatus");
+  if(dayStEl) d.dayStatus = dayStEl.value||"";
+
+  // 日中活動～帰宅
+  const daEl  = document.getElementById("mgr-daytimeActivity");
+  if(daEl) d.daytimeActivity = daEl.value||"";
+  const htEl  = document.getElementById("mgr-homeTime");
+  if(htEl) d.homeTime = htEl.value||"";
+  const hsEl  = document.getElementById("mgr-homeState");
+  if(hsEl) d.homeState = hsEl.value||"";
+  const hsdEl = document.getElementById("mgr-homeStateDetail");
+  if(hsdEl) d.homeStateDetail = hsdEl.value||"";
+
+  // 夕食
+  const dmEl  = document.getElementById("mgr-dinnerMenu");
+  if(dmEl) d.dinnerMenu = dmEl.value||"";
+  const dtEl  = document.getElementById("mgr-dinnerTemp");
+  if(dtEl) d.dinnerTemp= dtEl.value||"";
+  const dsEl  = document.getElementById("mgr-dinnerSpo2");
+  if(dsEl) d.dinnerSpo2= dsEl.value||"";
+  const dbp1 = document.getElementById("mgr-dinnerBP1");
+  if(dbp1) d.dinnerBP1 = dbp1.value||"";
+  const dbp2 = document.getElementById("mgr-dinnerBP2");
+  if(dbp2) d.dinnerBP2 = dbp2.value||"";
+  const dpu  = document.getElementById("mgr-dinnerPulse");
+  if(dpu) d.dinnerPulse= dpu.value||"";
+  const dms2 = document.getElementById("mgr-dinnerMealScore");
+  if(dms2) d.dinnerMealScore = dms2.value||"";
+  const dml2 = document.getElementById("mgr-dinnerMealLeft");
+  if(dml2) d.dinnerMealLeft= dml2.value||"";
+  const nam  = document.getElementById("mgr-nightAfterMeds");
+  if(nam) d.nightAfterMeds = nam.checked?"on":"off";
+
+  // 就寝
+  const smChk= document.getElementById("mgr-sleepMeds");
+  if(smChk) d.sleepMeds = smChk.checked?"on":"off";
+  const stEl= document.getElementById("mgr-sleepTime");
+  if(stEl) d.sleepTime = stEl.value||"";
+
+  // 夜間巡視
+  const c23= document.getElementById("mgr-check23User");
+  if(c23) d.check23User= c23.value||"";
+  const c1 = document.getElementById("mgr-check1User");
+  if(c1) d.check1User = c1.value||"";
+  const c3 = document.getElementById("mgr-check3User");
+  if(c3) d.check3User = c3.value||"";
+
+  // 起床
+  const wTime= document.getElementById("mgr-wakeTime");
+  if(wTime) d.wakeTime= wTime.value||"";
+  const wState= document.getElementById("mgr-wakeState");
+  if(wState) d.wakeState= wState.value||"";
+  const wDet= document.getElementById("mgr-wakeDetail");
+  if(wDet) d.wakeDetail= wDet.value||"";
+
+  // 朝食
+  const bfM= document.getElementById("mgr-breakfastMenu");
+  if(bfM) d.breakfastMenu= bfM.value||"";
+  const bfT= document.getElementById("mgr-breakfastTemp");
+  if(bfT) d.breakfastTemp= bfT.value||"";
+  const bfS= document.getElementById("mgr-breakfastSpo2");
+  if(bfS) d.breakfastSpo2= bfS.value||"";
+  const bfB1= document.getElementById("mgr-breakfastBP1");
+  if(bfB1) d.breakfastBP1= bfB1.value||"";
+  const bfB2= document.getElementById("mgr-breakfastBP2");
+  if(bfB2) d.breakfastBP2= bfB2.value||"";
+  const bfPu= document.getElementById("mgr-breakfastPulse");
+  if(bfPu) d.breakfastPulse= bfPu.value||"";
+  const bfSc= document.getElementById("mgr-breakfastMealScore");
+  if(bfSc) d.breakfastMealScore= bfSc.value||"";
+  const bfMl= document.getElementById("mgr-breakfastMealLeft");
+  if(bfMl) d.breakfastMealLeft= bfMl.value||"";
+  const bfAm= document.getElementById("mgr-morningAfterMeds");
+  if(bfAm) d.morningAfterMeds= bfAm.checked?"on":"off";
+
+  // 利用者の様子
+  const ucEl= document.getElementById("mgr-userCondition");
+  if(ucEl) d.userCondition= ucEl.value||"";
+
+  // 介助
+  const fac= document.getElementById("mgr-foodAssistCheck");
+  if(fac) d.foodAssistChecked= fac.checked?"on":"off";
+  const fad= document.getElementById("mgr-foodAssistDetail");
+  if(fad) d.foodAssistDetail= fad.value||"";
+
+  const bac= document.getElementById("mgr-bathAssistCheck");
+  if(bac) d.bathAssistChecked= bac.checked?"on":"off";
+  const bad= document.getElementById("mgr-bathAssistDetail");
+  if(bad) d.bathAssistDetail= bad.value||"";
+
+  const exc= document.getElementById("mgr-excretionAssistCheck");
+  if(exc) d.excretionAssistChecked= exc.checked?"on":"off";
+  const exd= document.getElementById("mgr-excretionAssistDetail");
+  if(exd) d.excretionAssistDetail= exd.value||"";
+
+  const chc= document.getElementById("mgr-changeAssistCheck");
+  if(chc) d.changeAssistChecked= chc.checked?"on":"off";
+  const chd= document.getElementById("mgr-changeAssistDetail");
+  if(chd) d.changeAssistDetail= chd.value||"";
+
+  const lsc= document.getElementById("mgr-lifeSupportCheck");
+  if(lsc) d.lifeSupportChecked= lsc.checked?"on":"off";
+  const lsd= document.getElementById("mgr-lifeSupportDetail");
+  if(lsd) d.lifeSupportDetail= lsd.value||"";
+
+  const mec= document.getElementById("mgr-mentalCareCheck");
+  if(mec) d.mentalCareChecked= mec.checked?"on":"off";
+  const med= document.getElementById("mgr-mentalCareDetail");
+  if(med) d.mentalCareDetail= med.value||"";
+
+  // 個別支援
+  const ltgEl= document.getElementById("mgr-longTermGoalSupport");
+  if(ltgEl) d.longTermGoalSupport= ltgEl.value||"";
+
+  if(!d.shortTermComments) d.shortTermComments = {};
+  for(let i=1; i<=5; i++){
+    const stEl = document.getElementById(`mgr-shortTermComment${i}`);
+    if(stEl) d.shortTermComments[i] = stEl.value||"";
+  }
+
+  // 上書き
+  tempServiceRecordData = d;
+
+  // DB保存
+  const fd = new FormData();
+  fd.append("service_record_json", JSON.stringify(d));
+
+  fetch("/save_service_record", {method:"POST", body:fd})
     .then(r=>r.text())
     .then(res=>{
-      if(res==="ok"){
+      alert("修正内容を保存しました。");
+      // → 管理者確認画面へ
+      openServiceRecordManagerConfirm(recId);
+    })
+    .catch(e=>{
+      alert("エラー:"+ e);
+    });
+}
+
+/**
+ * 削除
+ */
+function deleteServiceRecordConfirm(recId, dateStr) {
+  let label = dateStr;
+  if(dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)){
+    const [_,y,m,d] = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    label = `${parseInt(m,10)}月${parseInt(d,10)}日`;
+  }
+  const ok = confirm(`${label}のサービス提供記録を削除しますか？元に戻せません`);
+  if(!ok) return;
+
+  const fd = new FormData();
+  fd.append("id", recId);
+  fetch("/delete_service_record", {method:"POST", body:fd})
+    .then(r=>r.text())
+    .then(msg=>{
+      if(msg==="ok"){
         alert(`${label}のサービス提供記録を削除しました。`);
         fetchServiceRecordsByRange();
-      }else{
-        alert("削除エラー:"+res);
+      } else {
+        alert("削除エラー:"+ msg);
       }
     })
-    .catch(e=>alert("エラー:"+e));
+    .catch(e=> alert("エラー:"+ e));
 }
 
-/** PDFモーダル(管理者確認完了時のみ) */
+/**
+ * PDFモーダル
+ */
 function openServiceRecordPdfModal(recId){
-  const modal=document.getElementById("svc-pdf-modal");
-  const iframe=document.getElementById("svc-pdf-iframe");
-  iframe.src=`/service_record_pdf/${recId}`;
-  modal.style.display="block";
+  const modal = document.getElementById("svc-pdf-modal");
+  const iframe= document.getElementById("svc-pdf-iframe");
+  iframe.src = `/service_record_pdf/${recId}`;
+  modal.style.display = "block";
 }
 
-/** PDFモーダル閉じる */
-function closePdfModal(){
-  const modal=document.getElementById("svc-pdf-modal");
-  const iframe=document.getElementById("svc-pdf-iframe");
+function closeSvcPdfModal(){
+  const modal = document.getElementById("svc-pdf-modal");
+  const iframe= document.getElementById("svc-pdf-iframe");
   iframe.src="";
   modal.style.display="none";
 }
 
-/** PDF印刷(iframe内) */
-function printPdf(){
-  const iframe=document.getElementById("svc-pdf-iframe");
+function printSvcPdf(){
+  const iframe= document.getElementById("svc-pdf-iframe");
   iframe.contentWindow.print();
+}
+
+/**
+ * 一覧へ戻る
+ */
+function returnToServiceRecordList(){
+  window.scrollTo(0,0);
+  openServiceRecordDisplay();
+  // 必要に応じて fetchServiceRecordsByRange() など再検索
 }
 
 /********************************************

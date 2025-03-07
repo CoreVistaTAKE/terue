@@ -8,7 +8,7 @@ import re
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response, jsonify
 from datetime import datetime
 
-# PDF生成用(WeasyPrint) - 必要に応じてpip install weasyprint
+# PDF生成用(WeasyPrint)
 from weasyprint import HTML, CSS
 
 app = Flask(__name__)
@@ -656,6 +656,7 @@ def show_daily_report(report_id):
 def daily_report_pdf(report_id):
     """
     業務日誌PDF印刷
+    ※ フォントを反映するため、styles.css を読み込む。
     """
     conn = get_daily_db_connection()
     c = conn.cursor()
@@ -691,13 +692,17 @@ def daily_report_pdf(report_id):
         mgr_text = "確認済"
         mgr_style = "color:red; font-weight:bold;"
 
+    # HTMLソースを組み立て
     html_src = f"""
     <html>
     <head>
       <meta charset="UTF-8">
       <style>
         @page {{ size:A4; margin:20mm; }}
-        body {{ font-family: sans-serif; font-size: 12pt; }}
+        body {{
+          font-family: 'Roboto', sans-serif; /* 例: styles.cssで@font-face登録済みフォント */
+          font-size: 12pt;
+        }}
         .frame {{
           border: 1px solid #ccc;
           margin-bottom: 10px;
@@ -775,8 +780,13 @@ def daily_report_pdf(report_id):
     </html>
     """
 
-    pdf = HTML(string=html_src).write_pdf(
-        stylesheets=[CSS(string='@page { size:A4; margin:20mm;}')]
+    # ▼ styles.css を読み込むための準備
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    pdf_css_path = os.path.join(base_dir, "static", "styles.css")
+
+    # PDF生成
+    pdf = HTML(string=html_src, base_url=request.url_root).write_pdf(
+        stylesheets=[CSS(pdf_css_path)]
     )
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
@@ -903,7 +913,6 @@ def delete_daily_report():
     c.close()
     conn.close()
     return "ok"
-
 
 ########################################
 # Block #11: サービス提供記録 API (daily_report.db)
@@ -1089,16 +1098,17 @@ def delete_service_record():
 @app.route("/service_record_pdf/<int:rec_id>")
 def service_record_pdf(rec_id):
     """
-    サービス提供記録PDF。
-    JS側で入力された全項目を表示し、A4一枚で印刷できるようにする。
-    managerCheck='on' or status='済' なら 管理者確認=確認済。それ以外は未完了。
+    サービス提供記録PDFをA4一枚で印刷する。
+    枠1～枠7の仕様に沿ってレイアウトを組み立てる。
+    フォントは styles.css で設定。
     """
-    # 1) 該当するサービス提供記録を取得
     conn = get_daily_db_connection()
     c = conn.cursor()
     c.execute("""
        SELECT report_date, user_id, staff_day, staff_night, staff_extra,
-              lunch_menu, dinner_menu, breakfast_menu, content_json, status
+              lunch_menu, dinner_menu, breakfast_menu,
+              content_json,
+              status
          FROM user_service_records
         WHERE id=?
     """,(rec_id,))
@@ -1109,25 +1119,25 @@ def service_record_pdf(rec_id):
         return "No record found",404
 
     (r_date, u_id, s_day, s_night, s_extra,
-     l_menu, d_menu, b_menu, c_json, st) = row
+     l_menu, d_menu, b_menu,
+     c_json,
+     st) = row
 
-    # 2) content_json をパース
-    cdict = {}
+    import json
     try:
         cdict = json.loads(c_json or "{}")
     except:
-        pass
+        cdict = {}
 
-    # 3) 管理者確認
     mgr_val = cdict.get("managerCheck","off")
     if mgr_val=="on" or st=="済":
-        mgr_text = "確認済"
-        mgr_style = "color:red; font-weight:bold;"
+        mgr_text  = "確認済"
+        mgr_color = "red"
     else:
-        mgr_text = "未完了"
-        mgr_style = "color:gray; font-weight:normal;"
+        mgr_text  = "未完了"
+        mgr_color = "black"
 
-    # 4) management.db から利用者名を取得
+    # user_name 取得 (management.db)
     user_name = f"利用者ID:{u_id}"
     try:
         conn_m = get_management_db_connection()
@@ -1141,75 +1151,91 @@ def service_record_pdf(rec_id):
     except:
         pass
 
-    # 5) 各種項目を取得（JSと同様のキー）
-    #    JSで保存時のオブジェクト -> cdict 内に格納されている
-    #    例: cdict["daytimeActivity"], cdict["dayMealScore"], etc.
-    #    存在しない場合はデフォルト空文字
+    def getHomeStateLabel(val):
+        if val=="1": return "特に気になることはありません。"
+        if val=="2": return "少し疲れた様子"
+        if val=="3": return "体調不良の訴え"
+        if val=="4": return "不穏な雰囲気"
+        return val or ""
+
+    def getWakeStateLabel(val):
+        if val=="1": return "ご自身で起床"
+        if val=="2": return "声掛けで起床"
+        if val=="3": return "体調不良の訴え"
+        if val=="4": return "不穏な雰囲気"
+        if val=="5": return "その他"
+        return val or ""
+
     is_daytime = True if s_day else False
-    has_extra  = True if s_extra else False
 
-    dayMealScore      = cdict.get("dayMealScore","")
-    dayMealLeft       = cdict.get("dayMealLeft","")
-    dayStatus         = cdict.get("dayStatus","")
-    daytimeActivity   = cdict.get("daytimeActivity","")
-    homeTime          = cdict.get("homeTime","")
-    homeState         = cdict.get("homeState","")
-    homeStateDetail   = cdict.get("homeStateDetail","")
-    dayAfterMeds      = cdict.get("dayAfterMeds","off")
+    dayMealScore     = cdict.get("dayMealScore","")
+    dayMealLeft      = cdict.get("dayMealLeft","")
+    dayStatus        = cdict.get("dayStatus","")
+    daytimeActivity  = cdict.get("daytimeActivity","")
+    homeTime         = cdict.get("homeTime","")
+    homeState        = cdict.get("homeState","")
+    homeStateDetail  = cdict.get("homeStateDetail","")
+    dayAfterMeds     = cdict.get("dayAfterMeds","off")
 
-    dinnerTemp        = cdict.get("dinnerTemp","")
-    dinnerSpo2        = cdict.get("dinnerSpo2","")
-    dinnerBP1         = cdict.get("dinnerBP1","")
-    dinnerBP2         = cdict.get("dinnerBP2","")
-    dinnerPulse       = cdict.get("dinnerPulse","")
-    dinnerMealScore   = cdict.get("dinnerMealScore","")
-    dinnerMealLeft    = cdict.get("dinnerMealLeft","")
-    nightAfterMeds    = cdict.get("nightAfterMeds","off")
+    dinnerTemp       = cdict.get("dinnerTemp","")
+    dinnerSpo2       = cdict.get("dinnerSpo2","")
+    dinnerBP1        = cdict.get("dinnerBP1","")
+    dinnerBP2        = cdict.get("dinnerBP2","")
+    dinnerPulse      = cdict.get("dinnerPulse","")
+    dinnerMealScore  = cdict.get("dinnerMealScore","")
+    dinnerMealLeft   = cdict.get("dinnerMealLeft","")
+    nightAfterMeds   = cdict.get("nightAfterMeds","off")
 
-    sleepMeds         = cdict.get("sleepMeds","off")
-    sleepTime         = cdict.get("sleepTime","")
-    check23User       = cdict.get("check23User","")
-    check1User        = cdict.get("check1User","")
-    check3User        = cdict.get("check3User","")
+    sleepMeds        = cdict.get("sleepMeds","off")
+    sleepTime        = cdict.get("sleepTime","")
+    check23User      = cdict.get("check23User","")
+    check1User       = cdict.get("check1User","")
+    check3User       = cdict.get("check3User","")
 
-    wakeTime          = cdict.get("wakeTime","")
-    wakeState         = cdict.get("wakeState","")
-    wakeDetail        = cdict.get("wakeDetail","")
+    wakeTime         = cdict.get("wakeTime","")
+    wakeState        = cdict.get("wakeState","")
+    wakeDetail       = cdict.get("wakeDetail","")
 
-    breakfastTemp     = cdict.get("breakfastTemp","")
-    breakfastSpo2     = cdict.get("breakfastSpo2","")
-    breakfastBP1      = cdict.get("breakfastBP1","")
-    breakfastBP2      = cdict.get("breakfastBP2","")
-    breakfastPulse    = cdict.get("breakfastPulse","")
-    breakfastMealScore= cdict.get("breakfastMealScore","")
-    breakfastMealLeft = cdict.get("breakfastMealLeft","")
-    morningAfterMeds  = cdict.get("morningAfterMeds","off")
+    breakfastTemp    = cdict.get("breakfastTemp","")
+    breakfastSpo2    = cdict.get("breakfastSpo2","")
+    breakfastBP1     = cdict.get("breakfastBP1","")
+    breakfastBP2     = cdict.get("breakfastBP2","")
+    breakfastPulse   = cdict.get("breakfastPulse","")
+    breakfastMealScore = cdict.get("breakfastMealScore","")
+    breakfastMealLeft  = cdict.get("breakfastMealLeft","")
+    morningAfterMeds   = cdict.get("morningAfterMeds","off")
 
-    userCondition     = cdict.get("userCondition","")
+    userCondition    = cdict.get("userCondition","")
 
-    # 介助項目
-    foodAssistChecked     = cdict.get("foodAssistChecked","off")
-    foodAssistDetail      = cdict.get("foodAssistDetail","")
-    bathAssistChecked     = cdict.get("bathAssistChecked","off")
-    bathAssistDetail      = cdict.get("bathAssistDetail","")
-    excretionAssistChecked= cdict.get("excretionAssistChecked","off")
-    excretionAssistDetail = cdict.get("excretionAssistDetail","")
-    changeAssistChecked   = cdict.get("changeAssistChecked","off")
-    changeAssistDetail    = cdict.get("changeAssistDetail","")
-    lifeSupportChecked    = cdict.get("lifeSupportChecked","off")
-    lifeSupportDetail     = cdict.get("lifeSupportDetail","")
-    mentalCareChecked     = cdict.get("mentalCareChecked","off")
-    mentalCareDetail      = cdict.get("mentalCareDetail","")
+    foodAssistChecked      = cdict.get("foodAssistChecked","off")
+    foodAssistDetail       = cdict.get("foodAssistDetail","")
+    bathAssistChecked      = cdict.get("bathAssistChecked","off")
+    bathAssistDetail       = cdict.get("bathAssistDetail","")
+    excretionAssistChecked = cdict.get("excretionAssistChecked","off")
+    excretionAssistDetail  = cdict.get("excretionAssistDetail","")
+    changeAssistChecked    = cdict.get("changeAssistChecked","off")
+    changeAssistDetail     = cdict.get("changeAssistDetail","")
+    lifeSupportChecked     = cdict.get("lifeSupportChecked","off")
+    lifeSupportDetail      = cdict.get("lifeSupportDetail","")
+    mentalCareChecked      = cdict.get("mentalCareChecked","off")
+    mentalCareDetail       = cdict.get("mentalCareDetail","")
 
-    # 個別支援
-    longTermGoalSupport   = cdict.get("longTermGoalSupport","")
-    shortTermComments     = cdict.get("shortTermComments",{})
+    longTermGoalSupport = cdict.get("longTermGoalSupport","")
+    shortTermComments   = cdict.get("shortTermComments",{})
 
-    # 6) PDF用のHTMLを組み立て
-    from weasyprint import HTML, CSS
-    from datetime import datetime
+    homeLabel = getHomeStateLabel(homeState)
+    wakeLabel = getWakeStateLabel(wakeState)
 
-    # 日付表示(YYYY-MM-DD -> M月D日など)
+    # 短期目標コメント
+    stc_html = ""
+    if isinstance(shortTermComments, dict):
+        sorted_keys = sorted(shortTermComments.keys(), key=lambda x:int(x) if x.isdigit() else 9999)
+        for k in sorted_keys:
+            v = shortTermComments[k]
+            if v:
+                stc_html += f"短期目標{k}に対するコメント: {v}<br>"
+
+    # 日付(yyyy-mm-dd → M月D日)
     display_date = r_date
     try:
         y,m,d = r_date.split("-")
@@ -1217,142 +1243,138 @@ def service_record_pdf(rec_id):
     except:
         pass
 
-    # 介助項目のまとめ
-    assist_html = f"""
-      <li>食事介助: {foodAssistChecked} {foodAssistDetail}</li>
-      <li>入浴介助: {bathAssistChecked} {bathAssistDetail}</li>
-      <li>排泄介助: {excretionAssistChecked} {excretionAssistDetail}</li>
-      <li>着替えの介助: {changeAssistChecked} {changeAssistDetail}</li>
-      <li>生活支援: {lifeSupportChecked} {lifeSupportDetail}</li>
-      <li>メンタルケア: {mentalCareChecked} {mentalCareDetail}</li>
-    """
-
-    # 短期目標コメント
-    stg_html = ""
-    if isinstance(shortTermComments, dict):
-        for i in sorted(shortTermComments.keys(), key=lambda x: int(x)):
-            val = shortTermComments[i]
-            if val:
-                stg_html += f"<p><strong>短期目標{i}に対するコメント:</strong><br>{val}</p><hr/>"
-
-    # 昼食パート(ある場合)
+    # 昼食パート
     lunch_part = ""
     if is_daytime:
-        lunch_part = f"""<p><strong>昼食:</strong> 残量:{dayMealScore}/10"""
+        lunch_part += f"<p><strong>昼食:</strong> 残量:{dayMealScore}/10"
         if dayMealLeft:
-            lunch_part += f"　残:{dayMealLeft}"
-        lunch_part += f"</p>\n<p><strong>日中の様子:</strong> {dayStatus}</p>\n<hr/>\n"
+            lunch_part += f" 残:{dayMealLeft}"
+        lunch_part += "</p>"
+        lunch_part += f"<p><strong>日中の様子:</strong> {dayStatus}</p>"
 
-    # HTML全体
+    # HTML組み立て
     html_src = f"""
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        @page {{ size:A4; margin:20mm; }}
-        body {{
-          font-family: sans-serif;
-          font-size: 12pt;
-          line-height: 1.4;
-        }}
-        .frame {{
-          border: 1px solid #ccc;
-          margin-bottom: 10px;
-          padding: 8px;
-          border-radius: 6px;
-        }}
-        h2,h3 {{
-          margin: 0 0 6px 0;
-          padding: 0;
-        }}
-        .title-section {{
-          border: 2px solid #444;
-          padding: 10px;
-          border-radius: 6px;
-          margin-bottom: 10px;
-        }}
-      </style>
-    </head>
-    <body>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {{ size:A4; margin:10mm; }}
+    body {{
+      font-family: 'Roboto', sans-serif; /* styles.cssで@font-face済みのフォント名 */
+      font-size: 12pt;
+      line-height: 1.4;
+    }}
+    h2,h3 {{
+      margin: 0 0 4px 0;
+      padding: 0;
+    }}
+    hr {{
+      margin: 8px 0;
+      border: none;
+      border-top: 1px solid #ccc;
+    }}
+  </style>
+</head>
+<body>
 
-      <div class="title-section">
-        <h2>サービス提供記録 (ID:{rec_id})</h2>
-        <p><strong>利用者:</strong> {user_name}</p>
-        <p><strong>記録日:</strong> {display_date}</p>
-      </div>
+<!-- (枠1) -->
+<p>利用者: {user_name}</p>
+<p>記録日: <strong>{display_date}</strong></p>
+<p><strong>支援スタッフ</strong><br>
+   {"日中スタッフ: "+(s_day or "")+" 勤務時間:"+cdict.get("day_time","")+"<br>" if s_day else ""}
+   夜間スタッフ: {(s_night or "")} 勤務時間:{cdict.get("night_time","")}<br>
+   {f"追加スタッフ: {s_extra or ''} 勤務時間:{cdict.get('extra_time','')}<br>" if s_extra else ""}
+</p>
+<hr/>
 
-      <div class="frame">
-        <h3>スタッフ</h3>
-        {"<p><strong>日中スタッフ:</strong> "+s_day+"</p>" if s_day else ""}
-        <p><strong>夜間スタッフ:</strong> {s_night or ""}</p>
-        {f"<p><strong>追加スタッフ:</strong> {s_extra}</p>" if s_extra else ""}
-      </div>
+<!-- (枠2) -->
+<p><strong>献立</strong><br>
+   {f"昼食の献立: {l_menu}<br>" if s_day else ""}
+   夕食の献立: {d_menu}<br>
+   朝食の献立: {b_menu}
+</p>
+<hr/>
 
-      <div class="frame">
-        <h3>共通の献立</h3>
-        { (f"<p><strong>昼食の献立:</strong> {l_menu}</p>" if s_day else "") }
-        <p><strong>夕食の献立:</strong> {d_menu}</p>
-        <p><strong>朝食の献立:</strong> {b_menu}</p>
-      </div>
+<!-- (枠3) 詳細支援報告 -->
+<p><strong>詳細支援報告</strong><br>
+   {(lunch_part + "<hr/>") if is_daytime else ""}
+   <p><strong>日中活動:</strong> {daytimeActivity}</p>
+   <p><strong>帰宅時間:</strong> {homeTime} / 様子: {homeLabel} {homeStateDetail}</p>
+   <hr/>
+   <p><strong>夕食バイタル:</strong> 体温:{dinnerTemp}℃ / SpO2:{dinnerSpo2}, 血圧:{dinnerBP1}/{dinnerBP2}, 脈:{dinnerPulse}</p>
+   <p><strong>夕食:</strong> 残量:{dinnerMealScore}/10{' 残:'+dinnerMealLeft if dinnerMealLeft else ''}</p>
+   {"<p><strong>夕食後服薬:</strong> <strong>服薬確認</strong></p>" if nightAfterMeds=="on" else ""}
+</p>
+<hr/>
 
-      <div class="frame">
-        <h3>詳細報告</h3>
-        {lunch_part}
+<!-- (枠4) 就寝・巡視 -->
+<p><strong>就寝・巡視</strong><br>
+   {(f"就寝前服薬: <strong>服薬確認</strong><br>" if sleepMeds=='on' else "")}
+   就寝時間: {sleepTime}<br>
+   夜間巡視:<br>
+   &emsp;{check23User}<br>
+   &emsp;{check1User}<br>
+   &emsp;{check3User}
+</p>
+<hr/>
 
-        <p><strong>日中活動:</strong> {daytimeActivity}</p>
-        <p><strong>帰宅時間:</strong> {homeTime} / 様子:{homeState} {homeStateDetail}</p>
-        <hr/>
+<!-- (枠5) 起床、朝食 -->
+<p><strong>起床、朝食</strong><br>
+   起床時間: {wakeTime}<br>
+   起床時の様子: {wakeLabel} {wakeDetail}<br>
+   朝食バイタル: 体温:{breakfastTemp}℃ / SpO2:{breakfastSpo2}, 血圧:{breakfastBP1}/{breakfastBP2}, 脈:{breakfastPulse}<br>
+   朝食: 残量:{breakfastMealScore}/10{' 残:'+breakfastMealLeft if breakfastMealLeft else ''}<br>
+   {(f"朝食後服薬: <strong>服薬確認</strong><br>" if morningAfterMeds=='on' else "")}
+</p>
+<hr/>
 
-        <p><strong>夕食バイタル:</strong> 体温:{dinnerTemp}℃ / SpO2:{dinnerSpo2}, 血圧:{dinnerBP1}/{dinnerBP2}, 脈:{dinnerPulse}</p>
-        <p><strong>夕食:</strong> 残量:{dinnerMealScore}/10{" 残:"+dinnerMealLeft if dinnerMealLeft else ""}</p>
-        <hr/>
+<!-- (枠6) 利用者の支援詳細 -->
+<p><strong>利用者の支援詳細</strong><br>
+   利用者の様子: {userCondition}
+</p>
+"""
 
-        <p><strong>就寝前服薬:</strong> {sleepMeds}</p>
-        <p><strong>就寝時間:</strong> {sleepTime}</p>
-        <hr/>
+    # 介助項目
+    assist_html = ""
+    if foodAssistChecked=="on":
+        assist_html += f"・食事介助: {foodAssistDetail}<br>"
+    if bathAssistChecked=="on":
+        assist_html += f"・入浴介助: {bathAssistDetail}<br>"
+    if excretionAssistChecked=="on":
+        assist_html += f"・排泄介助: {excretionAssistDetail}<br>"
+    if changeAssistChecked=="on":
+        assist_html += f"・着替えの介助: {changeAssistDetail}<br>"
+    if lifeSupportChecked=="on":
+        assist_html += f"・生活支援: {lifeSupportDetail}<br>"
+    if mentalCareChecked=="on":
+        assist_html += f"・メンタルケア: {mentalCareDetail}<br>"
 
-        <p><strong>夜間巡視:</strong> {check23User} / {check1User} / {check3User}</p>
-        <hr/>
+    if assist_html:
+        html_src += f"<p><strong>介助項目</strong><br>{assist_html}</p>"
+    html_src += "<hr/>"
 
-        <p><strong>起床時間:</strong> {wakeTime}</p>
-        <p><strong>起床時の様子:</strong> {wakeState} {wakeDetail}</p>
-        <hr/>
+    # 個別支援
+    html_src += f"""
+<p><strong>個別支援</strong><br>
+   長期目標に対する支援: {longTermGoalSupport}<br>
+   {stc_html}
+</p>
+<hr/>
 
-        <p><strong>朝食バイタル:</strong> 体温:{breakfastTemp}℃ / SpO2:{breakfastSpo2},
-           血圧:{breakfastBP1}/{breakfastBP2}, 脈:{breakfastPulse}</p>
-        <p><strong>朝食:</strong> 残量:{breakfastMealScore}/10{" 残:"+breakfastMealLeft if breakfastMealLeft else ""}</p>
-        <hr/>
-
-        <p><strong>利用者の様子:</strong> {userCondition}</p>
-      </div>
-
-      <div class="frame">
-        <h3>介助項目</h3>
-        <ul>
-          {assist_html}
-        </ul>
-      </div>
-
-      <div class="frame">
-        <h3>個別支援</h3>
-        {"<p><strong>長期目標に対する支援:</strong><br>"+longTermGoalSupport+"</p><hr/>" if longTermGoalSupport else ""}
-        {stg_html}
-      </div>
-
-      <div class="frame">
-        <h3>管理者確認</h3>
-        <p>
-          <strong>状態:</strong>
-          <span style="{mgr_style}">{mgr_text}</span>
-        </p>
-      </div>
-
-    </body>
-    </html>
+<!-- (枠7) 管理者確認 -->
+<p><strong>管理者確認</strong><br>
+   <span style="color:{mgr_color};">{mgr_text}</span>
+</p>
+</body>
+</html>
     """
 
-    pdf = HTML(string=html_src).write_pdf(
-        stylesheets=[CSS(string='@page { size:A4; margin:20mm;}')]
+    # PDF生成(指定CSSの読み込み)
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    pdf_css_path = os.path.join(base_dir, "static", "styles.css")
+
+    pdf = HTML(string=html_src, base_url=request.url_root).write_pdf(
+        stylesheets=[CSS(pdf_css_path)]
     )
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
