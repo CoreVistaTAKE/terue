@@ -1,7 +1,4 @@
 ########################################
-# visonesystem.py
-########################################
-
 # Block #1: インポートとFlask初期設定
 ########################################
 import os
@@ -765,11 +762,11 @@ def daily_report_pdf(report_id):
     #    フォント埋め込み用に、@font-face 参照が許可されるようにする
     #    （Windows等でパスが通らない場合は追加オプションも要検討）
     base_dir = os.path.abspath(os.path.dirname(__file__))
-    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
+    wkhtmltoexe = os.path.join(base_dir, 'bin', 'wkhtmltopdf')
     # wkhtmltopdf でローカルファイル参照を許可
-    config = pdfkit.configuration()
+    config = pdfkit.configuration(wkhtmltopdf=wkhtmltoexe)
     options = {
-        'enable-local-file-access': None,
+        'enable-local-file-access': None
     }
 
     # 7) PDF生成
@@ -1363,9 +1360,10 @@ def service_record_pdf(rec_id):
 
     # --- 6) wkhtmltopdf用オプション設定 ---
     base_dir = os.path.abspath(os.path.dirname(__file__))
-    config = pdfkit.configuration()
+    wkhtmltoexe = os.path.join(base_dir, 'bin', 'wkhtmltopdf')
+    config = pdfkit.configuration(wkhtmltopdf=wkhtmltoexe)
     options = {
-        'enable-local-file-access': None,
+        'enable-local-file-access': None
     }
 
     # --- 7) PDF生成 ---
