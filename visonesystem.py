@@ -1276,6 +1276,7 @@ def service_record_pdf(rec_id):
   </style>
 </head>
 <body>
+
 <!-- (枠1) -->
 <p>利用者: {user_name}</p>
 <p>記録日: <strong>{display_date}</strong></p>

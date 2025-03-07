@@ -5347,7 +5347,6 @@ function printSvcPdf(){
   const iframe= document.getElementById("svc-pdf-iframe");
   iframe.contentWindow.print();
 }
-
 /**
  * 一覧へ戻る
  */

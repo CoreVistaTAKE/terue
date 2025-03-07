@@ -7,12 +7,14 @@
     font-weight: 400;
     src: url("/static/fonts/NotoSansJP-Regular.ttf") format("truetype");
   }
+  
   @font-face {
     font-family: 'NotoSansJP';
     font-style: normal;
     font-weight: 700;
     src: url("/static/fonts/NotoSansJP-Bold.ttf") format("truetype");
   }
+  
    @font-face {
     font-family: 'Font Awesome 5 Brands';
     font-weight: 400;
