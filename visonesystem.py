@@ -1,15 +1,18 @@
 ########################################
+# visonesystem.py
+########################################
+
 # Block #1: インポートとFlask初期設定
 ########################################
 import os
 import json
 import sqlite3
 import re
+# wkhtmltopdf を使用するためのライブラリ(pdfkit)
+import pdfkit
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response, jsonify
 from datetime import datetime
 
-# PDF生成用(WeasyPrint)
-from weasyprint import HTML, CSS
 
 app = Flask(__name__)
 
@@ -655,7 +658,7 @@ def show_daily_report(report_id):
 @app.route("/daily_report_pdf/<int:report_id>")
 def daily_report_pdf(report_id):
     """
-    業務日誌PDF出力 (ローカルの NotoSansJP-Regular.ttf を埋め込み)
+    業務日誌PDF出力 (wkhtmltopdfを使用)
     """
     # 1) データベースから日報情報を取得
     conn = get_daily_db_connection()
@@ -698,83 +701,81 @@ def daily_report_pdf(report_id):
 
     # 5) HTML 組み立て (業務日誌レイアウト)
     html_src = f"""
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        @page {{ size:A4; margin:20mm; }}
-        /* body に "NotoSansJP" を適用 (後で @font-face で読み込む) */
-        body {{
-          font-family: "NotoSansJP", sans-serif;
-          font-size: 12pt;
-        }}
-        .frame {{
-          border: 1px solid #ccc;
-          margin-bottom: 10px;
-          padding: 8px;
-          border-radius: 6px;
-        }}
-        .frame h2 {{
-          margin-top:0;
-          font-size:14pt;
-          border-bottom:1px solid #666;
-          margin-bottom:4px;
-        }}
-      </style>
-    </head>
-    <body>
-      <h1 style="text-align:center;">業務日誌</h1>
-      <p>日報ID: {report_id}</p>
-
-      <div class="frame">
-        <h2>日時・スタッフ名</h2>
-        <p><strong>記録日:</strong> {mmdd_label}</p>
-        <p><strong>日中スタッフ名:</strong> {staff_day}</p>
-        <p><strong>夜勤スタッフ名:</strong> {staff_night}</p>
-        <p><strong>追加スタッフ名:</strong> {staff_extra}</p>
-      </div>
-
-      <div class="frame">
-        <h2>食事の献立</h2>
-        <p><strong>昼食の献立:</strong> {lunch_menu}</p>
-        <p><strong>夕食の献立:</strong> {dinner_menu}</p>
-        <p><strong>朝食の献立:</strong> {breakfast_menu}</p>
-      </div>
-
-      <div class="frame">
-        <h2>当日業務の報告</h2>
-        <p><strong>業務内容:</strong><br>{cdict.get("businessContent", "")}</p>
-        <p><strong>連絡・引継ぎ事項:</strong><br>{cdict.get("relayInfo", "")}</p>
-      </div>
-
-      <div class="frame">
-        <h2>管理者確認</h2>
-        <p><strong>管理者確認:</strong> <span style="{mgr_style}">{mgr_text}</span></p>
-      </div>
-
-    </body>
-    </html>
-    """
-
-    # 6) WeasyPrint で PDF 作成
-    #    ローカルフォント "NotoSansJP-Regular.ttf" を埋め込む
-    #    (例: static/fonts/NotoSansJP-Regular.ttf に配置済み想定)
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
-    fonts_dir_slashed = fonts_dir.replace('\\', '/')
-    css_string = f"""
-    @font-face {{
-        font-family: 'NotoSansJP';
-        src: url('file://{fonts_dir_slashed}/NotoSansJP-Regular.ttf') format('truetype');
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {{
+      size: A4;
+      margin: 20mm;
     }}
     body {{
-        font-family: 'NotoSansJP', sans-serif;
+      font-family: "NotoSansJP", sans-serif;
+      font-size: 12pt;
     }}
-    """
+    .frame {{
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 6px;
+    }}
+    .frame h2 {{
+      margin-top:0;
+      font-size:14pt;
+      border-bottom:1px solid #666;
+      margin-bottom:4px;
+    }}
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center;">業務日誌</h1>
+  <p>日報ID: {report_id}</p>
 
-    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
+  <div class="frame">
+    <h2>日時・スタッフ名</h2>
+    <p><strong>記録日:</strong> {mmdd_label}</p>
+    <p><strong>日中スタッフ名:</strong> {staff_day}</p>
+    <p><strong>夜勤スタッフ名:</strong> {staff_night}</p>
+    <p><strong>追加スタッフ名:</strong> {staff_extra}</p>
+  </div>
 
-    # 7) レスポンス返却
+  <div class="frame">
+    <h2>食事の献立</h2>
+    <p><strong>昼食の献立:</strong> {lunch_menu}</p>
+    <p><strong>夕食の献立:</strong> {dinner_menu}</p>
+    <p><strong>朝食の献立:</strong> {breakfast_menu}</p>
+  </div>
+
+  <div class="frame">
+    <h2>当日業務の報告</h2>
+    <p><strong>業務内容:</strong><br>{cdict.get("businessContent", "")}</p>
+    <p><strong>連絡・引継ぎ事項:</strong><br>{cdict.get("relayInfo", "")}</p>
+  </div>
+
+  <div class="frame">
+    <h2>管理者確認</h2>
+    <p><strong>管理者確認:</strong> <span style="{mgr_style}">{mgr_text}</span></p>
+  </div>
+
+</body>
+</html>
+"""
+
+    # 6) wkhtmltopdf 用オプション設定（ローカルファイルアクセスなど）
+    #    フォント埋め込み用に、@font-face 参照が許可されるようにする
+    #    （Windows等でパスが通らない場合は追加オプションも要検討）
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
+    # wkhtmltopdf でローカルファイル参照を許可
+    config = pdfkit.configuration()
+    options = {
+        'enable-local-file-access': None,
+    }
+
+    # 7) PDF生成
+    pdf = pdfkit.from_string(html_src, False, configuration=config, options=options)
+
+    # 8) レスポンス返却
     resp = make_response(pdf)
     resp.headers["Content-Type"] = "application/pdf"
     resp.headers["Content-Disposition"] = f'inline; filename="DailyReport_{report_id}.pdf"'
@@ -1086,11 +1087,7 @@ def delete_service_record():
 def service_record_pdf(rec_id):
     """
     サービス提供記録PDFをA4一枚で印刷する。
-    枠1～枠7の仕様に沿ってレイアウトを組み立てる。
-
-    - フォントは「NotoSansJP」をローカルに置いて、
-      @font-face で埋め込む（WeasyPrint 用）。
-    - static/fonts/NotoSansJP-Regular.ttf が存在する前提。
+    (wkhtmltopdf使用・フォントは static/fonts/NotoSansJP-Regular.ttf を参照)
     """
 
     # --- 1) DBからサービス提供記録を取得 ---
@@ -1224,7 +1221,6 @@ def service_record_pdf(rec_id):
     # 短期目標コメントHTML
     stc_html = ""
     if isinstance(shortTermComments, dict):
-        # キーが "1","2",... の想定
         sorted_keys = sorted(shortTermComments.keys(), key=lambda x:int(x) if x.isdigit() else 9999)
         for k in sorted_keys:
             v = shortTermComments[k]
@@ -1254,7 +1250,9 @@ def service_record_pdf(rec_id):
 <head>
   <meta charset="UTF-8">
   <style>
-    @page {{ size:A4; margin:10mm; }}
+    @page {{
+      size:A4; margin:10mm;
+    }}
     body {{
       font-family: "NotoSansJP", sans-serif;
       font-size: 12pt;
@@ -1325,12 +1323,11 @@ def service_record_pdf(rec_id):
 <hr/>
 
 <!-- (枠6) 利用者の支援詳細 -->
-<p><strong>利用者の支援詳細</strong><br>
-   利用者の様子: {userCondition}
+<p><strong>利用者の様子</strong><br>
+   {userCondition}
 </p>
 """
 
-    # 介助項目があれば表示
     assist_html = ""
     if foodAssistChecked=="on":
         assist_html += f"・食事介助: {foodAssistDetail}<br>"
@@ -1349,7 +1346,6 @@ def service_record_pdf(rec_id):
         html_src += f"<p><strong>介助項目</strong><br>{assist_html}</p>"
     html_src += "<hr/>"
 
-    # 個別支援
     html_src += f"""
 <p><strong>個別支援</strong><br>
    長期目標に対する支援: {longTermGoalSupport}<br>
@@ -1363,24 +1359,17 @@ def service_record_pdf(rec_id):
 </p>
 </body>
 </html>
-    """
+"""
 
-    # --- 6) WeasyPrint用: ローカルフォント "NotoSansJP-Regular.ttf" を埋め込む CSS を作成 ---
+    # --- 6) wkhtmltopdf用オプション設定 ---
     base_dir = os.path.abspath(os.path.dirname(__file__))
-    fonts_dir = os.path.join(base_dir, 'static', 'fonts')
-    fonts_dir_slashed = fonts_dir.replace('\\', '/')
-    css_string = f"""
-    @font-face {{
-        font-family: 'NotoSansJP';
-        src: url('file://{fonts_dir_slashed}/NotoSansJP-Regular.ttf') format('truetype');
-    }}
-    body {{
-        font-family: 'NotoSansJP', sans-serif;
-    }}
-    """
+    config = pdfkit.configuration()
+    options = {
+        'enable-local-file-access': None,
+    }
 
     # --- 7) PDF生成 ---
-    pdf = HTML(string=html_src).write_pdf(stylesheets=[CSS(string=css_string)])
+    pdf = pdfkit.from_string(html_src, False, configuration=config, options=options)
 
     # --- 8) PDFをレスポンスとして返却 ---
     resp = make_response(pdf)
@@ -1956,19 +1945,17 @@ def api_active_users():
     rows = cur.fetchall()
     active_list = []
     for (uid, uname, cend) in rows:
-        cend = cend or ""  # Noneの場合空文字
+        cend = cend or ""
         if not cend:
             # 契約終了日が未設定 => アクティブ扱い
             active_list.append({"id": uid, "name": uname})
         else:
-            # 形式がYYYY-MM-DDの場合、日付比較
             try:
                 cend_dt = datetime.strptime(cend, "%Y-%m-%d")
                 today_dt = datetime.strptime(today_str, "%Y-%m-%d")
                 if cend_dt >= today_dt:
                     active_list.append({"id": uid, "name": uname})
             except:
-                # 変換エラーの場合は除外
                 pass
 
     cur.close()
@@ -2027,7 +2014,6 @@ def api_user_careplan():
      sgoal4, ssupport4,
      sgoal5, ssupport5) = row
 
-    # 短期目標(1~5)をループ化
     goals = [(sgoal1, ssupport1),
              (sgoal2, ssupport2),
              (sgoal3, ssupport3),
